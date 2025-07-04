@@ -1,40 +1,118 @@
+using Dot.Net.WebApi.Data;
 using Dot.Net.WebApi.Domain;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using P7CreateRestApi.Models.Dto;
+using P7CreateRestApi.Models.Services;
+using P7CreateRestApi.Repositories;
 
-namespace Dot.Net.WebApi.Controllers
+namespace P7CreateRestApi.Controllers
 {
     [ApiController]
     [Route("[controller]")]
     public class BidListController : ControllerBase
     {
-        [HttpGet]
-        [Route("validate")]
-        public IActionResult Validate([FromBody] BidList bidList)
+
+        private readonly BidService _bidService;
+        private readonly ILogger<BidListController> _logger;
+
+        public BidListController(BidService bidService, ILogger<BidListController> logger)
         {
-            // TODO: check data valid and save to db, after saving return bid list
-            return Ok();
+            _bidService = bidService;
+            _logger = logger;
         }
 
+
         [HttpGet]
-        [Route("update/{id}")]
-        public IActionResult ShowUpdateForm(int id)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllBids()
         {
-            return Ok();
+            try
+            {
+                var bids = await _bidService.GetBidLists();
+                return Ok(bids);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching bids");
+                return StatusCode(500, new { message = "Error while fetching bids." });
+            }
+        }
+
+        [HttpGet("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetBidById(int id)
+        {
+            try
+            {
+                var bid = await _bidService.GetBidList(id);
+                if (bid == null)
+                {
+                    return NotFound(new { message = "Bid not found." });
+                }
+                return Ok(bid);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching bid by ID");
+                return StatusCode(500, new { message = "Error while fetching bid." });
+            }
         }
 
         [HttpPost]
-        [Route("update/{id}")]
-        public IActionResult UpdateBid(int id, [FromBody] BidList bidList)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> AddBid([FromBody] BidListDto bidDto)
         {
-            // TODO: check required fields, if valid call service to update Bid and return list Bid
-            return Ok();
+            try
+            {
+                var createdBid = await _bidService.AddBidList(bidDto);
+                return CreatedAtAction(nameof(GetBidById), new { id = createdBid.BidListId}, createdBid);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while adding bid");
+                return StatusCode(500, new { message = "Error while adding bid." });
+            }
         }
 
-        [HttpDelete]
-        [Route("{id}")]
-        public IActionResult DeleteBid(int id)
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateBid(int id, [FromBody] BidListDto bidDto)
         {
-            return Ok();
+            try
+            {
+                var updatedBid = await _bidService.UpdateBidList(id, bidDto);
+                if (updatedBid == null)
+                {
+                    return NotFound(new { message = "Bid not found for update." });
+                }
+                return Ok(updatedBid);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while updating bid");
+                return StatusCode(500, new { message = "Error while updating bid." });
+            }
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteBid(int id)
+        {
+            try
+            {
+                var deleted = await _bidService.DeleteBidList(id);
+                if (!deleted)
+                {
+                    return NotFound(new { message = "Bid not found for deletion." });
+                }
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while deleting bid");
+                return StatusCode(500, new { message = "Error while deleting bid." });
+            }
         }
     }
 }

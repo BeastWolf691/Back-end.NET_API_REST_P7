@@ -63,10 +63,23 @@ namespace P7CreateRestApi.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddBid([FromBody] BidListDto bidDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             try
             {
                 var createdBid = await _bidService.AddBidList(bidDto);
-                return CreatedAtAction(nameof(GetBidById), new { id = createdBid.BidListId}, createdBid);
+                var resultDto = new BidListDto
+                {
+                    BidListId = createdBid.BidListId,
+                    Account = createdBid.Account,
+                    BidType = createdBid.BidType,
+                    BidQuantity = createdBid.BidQuantity
+                };
+
+                return CreatedAtAction(nameof(GetBidById), new { id = resultDto.BidListId }, resultDto);
             }
             catch (Exception ex)
             {

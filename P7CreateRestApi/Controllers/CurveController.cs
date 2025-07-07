@@ -1,5 +1,8 @@
 using Dot.Net.WebApi.Domain;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using P7CreateRestApi.Models.Dto;
+using P7CreateRestApi.Models.Services;
 
 namespace Dot.Net.WebApi.Controllers
 {
@@ -7,52 +10,119 @@ namespace Dot.Net.WebApi.Controllers
     [Route("[controller]")]
     public class CurveController : ControllerBase
     {
-        // TODO: Inject Curve Point service
+        private readonly CurvePointService _curvePointService;
+        private readonly ILogger<CurveController> _logger;
 
-        [HttpGet]
-        [Route("list")]
-        public IActionResult Home()
+        public CurveController(CurvePointService curvePointService, ILogger<CurveController> logger)
         {
-            return Ok();
+            _curvePointService = curvePointService;
+            _logger = logger;
         }
 
         [HttpGet]
-        [Route("add")]
-        public IActionResult AddCurvePoint([FromBody]CurvePoint curvePoint)
+        [Authorize]
+        public async Task<IActionResult> GetCurves()
         {
-            return Ok();
+            try
+            {
+                var curves = await _curvePointService.GetCurves();
+                return Ok(curves);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching bids");
+                return StatusCode(500, new { message = "Error while fetching bids." });
+            }
         }
 
-        [HttpGet]
-        [Route("validate")]
-        public IActionResult Validate([FromBody]CurvePoint curvePoint)
+        [HttpGet("{id}")]
+        [Authorize]
+        public async Task<IActionResult> GetCurveById(int id)
         {
-            // TODO: check data valid and save to db, after saving return bid list
-            return Ok();
-        }
-
-        [HttpGet]
-        [Route("update/{id}")]
-        public IActionResult ShowUpdateForm(int id)
-        {
-            // TODO: get CurvePoint by Id and to model then show to the form
-            return Ok();
+            try
+            {
+                var curve = await _curvePointService.GetCurve(id);
+                if (curve == null)
+                {
+                    return NotFound(new { message = "Curve not found." });
+                }
+                return Ok(curve);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching curve by ID");
+                return StatusCode(500, new { message = "Error while fetching curve." });
+            }
         }
 
         [HttpPost]
-        [Route("update/{id}")]
-        public IActionResult UpdateCurvePoint(int id, [FromBody] CurvePoint curvePoint)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> AddCurvePoint([FromBody]CurvePointDto curvePointDto)
         {
-            // TODO: check required fields, if valid call service to update Curve and return Curve list
-            return Ok();
+            if(!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var createdCurve = await _curvePointService.AddCurve(curvePointDto);
+                var resultDto = new CurvePointDto
+                {
+                    Id = createdCurve.Id,
+                    CurveId = createdCurve.CurveId,
+                    Term = createdCurve.Term,
+                    CurvePointValue = createdCurve.CurvePointValue,
+                    AsOfDate = createdCurve.AsOfDate,
+                    CreationDate = createdCurve.CreationDate
+                };
+                return CreatedAtAction(nameof(GetCurveById), new { id = resultDto.Id }, resultDto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while adding curve");
+                return StatusCode(500, new { message = "Error while adding curve." });
+            }
         }
 
-        [HttpDelete]
-        [Route("{id}")]
-        public IActionResult DeleteBid(int id)
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateCurvePoint(int id, [FromBody] CurvePointDto curvePointDto)
         {
-            // TODO: Find Curve by Id and delete the Curve, return to Curve list
-            return Ok();
+            try
+            {
+                var updatedCurve = await _curvePointService.UpdateCurve(id, curvePointDto);
+                if (updatedCurve == null)
+                {
+                    return NotFound(new { message = "Curve not found for update." });
+                }
+                return Ok(updatedCurve);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while updating curve");
+                return StatusCode(500, new { message = "Error while updating curve." });
+            }
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteCurve(int id)
+        {
+            try
+            {
+                var deleted = await _curvePointService.DeleteCurve(id);
+                if (!deleted)
+                {
+                    return NotFound(new { message = "Curve not found for deletion." });
+                }
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while deleting curve");
+                return StatusCode(500, new { message = "Error while deleting curve." });
+            }
         }
     }
 }

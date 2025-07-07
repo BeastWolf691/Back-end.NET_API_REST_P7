@@ -24,7 +24,7 @@ namespace P7CreateRestApi.Controllers
 
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         public async Task<IActionResult> GetAllBids()
         {
             try
@@ -40,7 +40,7 @@ namespace P7CreateRestApi.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         public async Task<IActionResult> GetBidById(int id)
         {
             try

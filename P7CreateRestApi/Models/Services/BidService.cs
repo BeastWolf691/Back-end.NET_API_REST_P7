@@ -4,7 +4,7 @@ using P7CreateRestApi.Models.Repositories;
 
 namespace P7CreateRestApi.Models.Services
 {
-    public class BidService
+    public class BidService : IBidService
     {
 
         private readonly IBidRepository _bidRepository;
@@ -24,12 +24,12 @@ namespace P7CreateRestApi.Models.Services
             return await _bidRepository.GetBidList(id);
         }
 
-        public async Task<BidList> AddBidList(BidListDto bidListDto)
+        public async Task<BidListDto> AddBidList(BidListDto bidListDto)
         {
             return await _bidRepository.AddBidList(bidListDto);
         }
 
-        public async Task<BidList?> UpdateBidList(int id, BidListDto bidListDto)
+        public async Task<BidListDto?> UpdateBidList(int id, BidListDto bidListDto)
         {
             return await _bidRepository.UpdateBidList(id, bidListDto);
         }

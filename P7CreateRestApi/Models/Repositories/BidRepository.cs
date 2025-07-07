@@ -87,7 +87,6 @@ namespace P7CreateRestApi.Repositories
 
             return new BidListDto
             {
-                BidListId = bidList.BidListId,
                 Account = bidList.Account,
                 BidType = bidList.BidType,
                 BidQuantity = bidList.BidQuantity

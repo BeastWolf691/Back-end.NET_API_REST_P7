@@ -3,8 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using P7CreateRestApi.Models.Dto;
 using Dot.Net.WebApi.Data;
 
-
-namespace P7CreateRestApi.Models.Repositories
+namespace P7CreateRestApi.Repositories
 {
     public class CurvePointRepository : ICurvePointRepository
     {
@@ -64,7 +63,7 @@ namespace P7CreateRestApi.Models.Repositories
                 Term = curvePoint.Term,
                 CurvePointValue = curvePoint.CurvePointValue,
                 CreationDate = curvePointDto.CreationDate,
-                AsOfDate= curvePointDto.AsOfDate
+                AsOfDate = curvePointDto.AsOfDate
             };
         }
 

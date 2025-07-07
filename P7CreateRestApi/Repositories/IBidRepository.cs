@@ -1,7 +1,7 @@
 ﻿using Dot.Net.WebApi.Domain;
 using P7CreateRestApi.Models.Dto;
 
-namespace P7CreateRestApi.Models.Repositories
+namespace P7CreateRestApi.Repositories
 {
     public interface IBidRepository
     {

@@ -3,8 +3,8 @@ using Dot.Net.WebApi.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using P7CreateRestApi.Models.Dto;
-using P7CreateRestApi.Models.Services;
 using P7CreateRestApi.Repositories;
+using P7CreateRestApi.Services;
 
 namespace P7CreateRestApi.Controllers
 {

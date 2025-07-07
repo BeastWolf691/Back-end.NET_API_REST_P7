@@ -1,6 +1,6 @@
 using Dot.Net.WebApi.Domain;
 using Microsoft.AspNetCore.Mvc;
-using P7CreateRestApi.Models.Repositories;
+using P7CreateRestApi.Repositories;
 
 namespace Dot.Net.WebApi.Controllers
 {

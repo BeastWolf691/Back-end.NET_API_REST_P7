@@ -1,7 +1,7 @@
 ﻿using Dot.Net.WebApi.Domain;
 using P7CreateRestApi.Models.Dto;
 
-namespace P7CreateRestApi.Models.Services
+namespace P7CreateRestApi.Services
 {
     public interface IBidService
     {

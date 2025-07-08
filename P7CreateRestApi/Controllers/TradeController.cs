@@ -1,59 +1,145 @@
-using Dot.Net.WebApi.Domain;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using P7CreateRestApi.Models.Dto;
+using P7CreateRestApi.Services;
 
-namespace Dot.Net.WebApi.Controllers
+namespace P7CreateRestApi.Controllers
 {
     [ApiController]
     [Route("[controller]")]
     public class TradeController : ControllerBase
     {
-        // TODO: Inject Trade service
 
-        [HttpGet]
-        [Route("list")]
-        public IActionResult Home()
+        private readonly TradeService _tradeService;
+        private readonly ILogger<TradeController> _logger;
+
+        public TradeController(TradeService tradeService, ILogger<TradeController> logger)
         {
-            // TODO: find all Trade, add to model
-            return Ok();
+            _tradeService = tradeService;
+            _logger = logger;
         }
 
         [HttpGet]
-        [Route("add")]
-        public IActionResult AddTrade([FromBody]Trade trade)
+        [Authorize]
+        public async Task<IActionResult> GetAllTrades()
         {
-            return Ok();
+            try
+            {
+                var trades = await _tradeService.GetTrades();
+                return Ok(trades);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching trades");
+                return StatusCode(500, new { message = "Error while fetching trades." });
+            }
         }
 
-        [HttpGet]
-        [Route("validate")]
-        public IActionResult Validate([FromBody]Trade trade)
+        [HttpGet("{id}")]
+        [Authorize]
+        public async Task<IActionResult> GetTradeById(int id)
         {
-            // TODO: check data valid and save to db, after saving return Trade list
-            return Ok();
-        }
-
-        [HttpGet]
-        [Route("update/{id}")]
-        public IActionResult ShowUpdateForm(int id)
-        {
-            // TODO: get Trade by Id and to model then show to the form
-            return Ok();
+            try
+            {
+                var trade = await _tradeService.GetTrade(id);
+                if (trade == null)
+                {
+                    return NotFound(new { message = "Trade not found." });
+                }
+                return Ok(trade);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching trade by ID");
+                return StatusCode(500, new { message = "Error while fetching trade." });
+            }
         }
 
         [HttpPost]
-        [Route("update/{id}")]
-        public IActionResult UpdateTrade(int id, [FromBody] Trade trade)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> AddTrade([FromBody] TradeDto tradeDto)
         {
-            // TODO: check required fields, if valid call service to update Trade and return Trade list
-            return Ok();
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var createdTrade = await _tradeService.AddTrade(tradeDto);
+                var resultDto = new TradeDto
+                {
+                    TradeId = createdTrade.TradeId,
+                    Account = createdTrade.Account,
+                    AccountType = createdTrade.AccountType,
+                    BuyQuantity = createdTrade.BuyQuantity,
+                    SellQuantity = createdTrade.SellQuantity,
+                    BuyPrice = createdTrade.BuyPrice,
+                    SellPrice = createdTrade.SellPrice,
+                    TradeDate = createdTrade.TradeDate,
+                    TradeSecurity = createdTrade.TradeSecurity,
+                    TradeStatus = createdTrade.TradeStatus,
+                    Trader = createdTrade.Trader,
+                    Benchmark = createdTrade.Benchmark,
+                    Book = createdTrade.Book,
+                    CreationName = createdTrade.CreationName,
+                    CreationDate = createdTrade.CreationDate,
+                    RevisionName = createdTrade.RevisionName,
+                    RevisionDate = createdTrade.RevisionDate,
+                    DealName = createdTrade.DealName,
+                    DealType = createdTrade.DealType,
+                    SourceListId = createdTrade.SourceListId,
+                    Side = createdTrade.Side
+                };
+                return CreatedAtAction(nameof(GetTradeById), new { id = resultDto.TradeId }, resultDto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while adding trade");
+                return StatusCode(500, new { message = "Error while adding trade." });
+            }
+
         }
 
-        [HttpDelete]
-        [Route("{id}")]
-        public IActionResult DeleteTrade(int id)
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateTrade(int id, [FromBody] TradeDto tradeDto)
         {
-            // TODO: Find Trade by Id and delete the Trade, return to Trade list
-            return Ok();
+            try
+            {
+                var updateTrade = await _tradeService.UpdateTrade(id, tradeDto);
+                if (updateTrade == null)
+                {
+                    return NotFound(new { message = "Trade not found for update." });
+                }
+                return Ok(updateTrade);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while updating trade");
+                return StatusCode(500, new { message = "Error while updating trade." });
+            }
         }
+
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteTrade(int id)
+        {
+            try
+            {
+                var deleted = await _tradeService.DeleteTrade(id);
+                if (!deleted)
+                {
+                    return NotFound(new { message = "Trade not found for deletion." });
+                }
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while deleting trade");
+                return StatusCode(500, new { message = "Error while deleting trade." });
+            }
+        }
+
     }
 }

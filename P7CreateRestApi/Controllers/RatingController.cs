@@ -10,9 +10,9 @@ namespace P7CreateRestApi.Controllers
     public class RatingController : ControllerBase
     {
         private readonly RatingService _ratingService;
-        private readonly ILogger _logger;
+        private readonly ILogger<RatingController> _logger;
 
-        public RatingController(RatingService ratingService, ILogger logger)
+        public RatingController(RatingService ratingService, ILogger<RatingController> logger)
         {
             _ratingService = ratingService;
             _logger = logger;

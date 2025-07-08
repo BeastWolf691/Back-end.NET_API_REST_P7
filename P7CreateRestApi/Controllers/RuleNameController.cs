@@ -10,9 +10,9 @@ namespace P7CreateRestApi.Controllers
     public class RuleNameController : ControllerBase
     {
         private readonly RuleService _ruleService;
-        private readonly ILogger _logger;
+        private readonly ILogger<RuleNameController> _logger;
 
-        public RuleNameController(RuleService ruleService, ILogger logger)
+        public RuleNameController(RuleService ruleService, ILogger<RuleNameController> logger)
         {
             _ruleService = ruleService;
             _logger = logger;

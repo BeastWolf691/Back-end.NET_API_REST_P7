@@ -1,11 +1,9 @@
-using System.Security.Cryptography;
-using Dot.Net.WebApi.Controllers.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using P7CreateRestApi.Models.Dto;
 using P7CreateRestApi.Services;
 
-namespace Dot.Net.WebApi.Controllers
+namespace P7CreateRestApi.Controllers
 {
     [ApiController]
     [Route("[controller]")]

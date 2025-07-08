@@ -1,58 +1,129 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using P7CreateRestApi.Models.Dto;
+using P7CreateRestApi.Services;
 
-namespace Dot.Net.WebApi.Controllers
+namespace P7CreateRestApi.Controllers
 {
     [ApiController]
     [Route("[controller]")]
     public class RuleNameController : ControllerBase
     {
-        // TODO: Inject RuleName service
+        private readonly RuleService _ruleService;
+        private readonly ILogger _logger;
 
-        [HttpGet]
-        [Route("list")]
-        public IActionResult Home()
+        public RuleNameController(RuleService ruleService, ILogger logger)
         {
-            // TODO: find all RuleName, add to model
-            return Ok();
+            _ruleService = ruleService;
+            _logger = logger;
         }
 
         [HttpGet]
-        [Route("add")]
-        public IActionResult AddRuleName([FromBody]RuleName trade)
+        [Authorize]
+        public async Task<IActionResult> GetAllRules()
         {
-            return Ok();
+            try
+            {
+                var rules = await _ruleService.GetRules();
+                return Ok(rules);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching rules");
+                return StatusCode(500, new { message = "Error while fetching rules." });
+            }
         }
 
-        [HttpGet]
-        [Route("validate")]
-        public IActionResult Validate([FromBody]RuleName trade)
+        [HttpGet("{id}")]
+        [Authorize]
+        public async Task<IActionResult> GetRuleById(int id)
         {
-            // TODO: check data valid and save to db, after saving return RuleName list
-            return Ok();
-        }
-
-        [HttpGet]
-        [Route("update/{id}")]
-        public IActionResult ShowUpdateForm(int id)
-        {
-            // TODO: get RuleName by Id and to model then show to the form
-            return Ok();
+            try
+            {
+                var rule = await _ruleService.GetRule(id);
+                if (rule == null)
+                {
+                    return NotFound(new { message = "Rule not found." });
+                }
+                return Ok(rule);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching rule by ID");
+                return StatusCode(500, new { message = "Error while fetching rule." });
+            }
         }
 
         [HttpPost]
-        [Route("update/{id}")]
-        public IActionResult UpdateRuleName(int id, [FromBody] RuleName rating)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> AddRule([FromBody] RuleDto ruleDto)
         {
-            // TODO: check required fields, if valid call service to update RuleName and return RuleName list
-            return Ok();
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var createdRule = await _ruleService.AddRule(ruleDto);
+                var resultDto = new RuleDto
+                {
+                    Id = createdRule.Id,
+                    Name = createdRule.Name,
+                    Description = createdRule.Description,
+                    Json = createdRule.Json,
+                    Template = createdRule.Template,
+                    SqlStr = createdRule.SqlStr,
+                    SqlPart = createdRule.SqlPart
+                };
+
+                return CreatedAtAction(nameof(GetRuleById), new { id = resultDto.Id }, resultDto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while adding rule");
+                return StatusCode(500, new { message = "Error while adding rule." });
+            }
         }
 
-        [HttpDelete]
-        [Route("{id}")]
-        public IActionResult DeleteRuleName(int id)
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateRule(int id, [FromBody] RuleDto ruleDto)
         {
-            // TODO: Find RuleName by Id and delete the RuleName, return to Rule list
-            return Ok();
+            try
+            {
+                var updatedRule = await _ruleService.UpdateRule(id, ruleDto);
+                if (updatedRule == null)
+                {
+                    return NotFound(new { message = "Rule not found for update." });
+                }
+                return Ok(updatedRule);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while updating rule");
+                return StatusCode(500, new { message = "Error while updating rule." });
+            }
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteRule(int id)
+        {
+            try
+            {
+                var deleted = await _ruleService.DeleteRule(id);
+                if (!deleted)
+                {
+                    return NotFound(new { message = "Rule not found for deletion." });
+                }
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while deleting rule");
+                return StatusCode(500, new { message = "Error while deleting rule." });
+            }
         }
     }
 }

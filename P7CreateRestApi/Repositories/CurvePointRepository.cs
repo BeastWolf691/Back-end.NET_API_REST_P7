@@ -14,92 +14,69 @@ namespace P7CreateRestApi.Repositories
             _context = context;
         }
 
+        private static CurvePointDto ToDto(CurvePoint curvePoint) => new CurvePointDto
+        {
+            Id = curvePoint.Id,
+            CurveId = curvePoint.CurveId,
+            Term = curvePoint.Term,
+            CurvePointValue = curvePoint.CurvePointValue,
+            CreationDate = curvePoint.CreationDate,
+            AsOfDate = curvePoint.AsOfDate
+        };
+
+        private static CurvePoint ToEntity(CurvePointDto curvePointDto) => new CurvePoint
+        {
+            Id = curvePointDto.Id,
+            CurveId = curvePointDto.CurveId,
+            Term = curvePointDto.Term,
+            CurvePointValue = curvePointDto.CurvePointValue,
+            CreationDate = curvePointDto.CreationDate,
+            AsOfDate = curvePointDto.AsOfDate
+        };
+
         public async Task<IEnumerable<CurvePointDto>> GetCurves()
         {
             return await _context.CurvePoints
-                .Select(curvePoint => new CurvePointDto
-                {
-                    Id = curvePoint.Id,
-                    CurveId = curvePoint.CurveId,
-                    Term = curvePoint.Term,
-                    CurvePointValue = curvePoint.CurvePointValue
-                })
+                .Select(curvePoint => ToDto(curvePoint))
                 .ToListAsync();
         }
 
         public async Task<CurvePointDto?> GetCurve(int id)
         {
             var curvePoint = await _context.CurvePoints.FindAsync(id);
-            if (curvePoint == null)
-            {
-                return null;
-            }
-
-            return new CurvePointDto
-            {
-                Id = curvePoint.Id,
-                CurveId = curvePoint.CurveId,
-                Term = curvePoint.Term,
-                CurvePointValue = curvePoint.CurvePointValue
-            };
+            return curvePoint is null ? null : ToDto(curvePoint);
         }
+
 
         public async Task<CurvePointDto> AddCurve(CurvePointDto curvePointDto)
         {
-            var curvePoint = new CurvePoint
-            {
-                CurveId = curvePointDto.CurveId,
-                Term = curvePointDto.Term,
-                CurvePointValue = curvePointDto.CurvePointValue,
-                CreationDate = curvePointDto.CreationDate,
-                AsOfDate = curvePointDto.AsOfDate
-            };
+            var curvePoint = ToEntity(curvePointDto);
             _context.CurvePoints.Add(curvePoint);
             await _context.SaveChangesAsync();
-            return new CurvePointDto
-            {
-                Id = curvePoint.Id,
-                CurveId = curvePoint.CurveId,
-                Term = curvePoint.Term,
-                CurvePointValue = curvePoint.CurvePointValue,
-                CreationDate = curvePointDto.CreationDate,
-                AsOfDate = curvePointDto.AsOfDate
-            };
+            return ToDto(curvePoint);
         }
 
         public async Task<CurvePointDto?> UpdateCurve(int id, CurvePointDto curvePointDto)
         {
             var curvePoint = await _context.CurvePoints.FindAsync(id);
-            if (curvePoint == null)
-            {
-                return null;
-            }
+            if (curvePoint == null) return null;
+
             curvePoint.CurveId = curvePointDto.CurveId;
             curvePoint.Term = curvePointDto.Term;
             curvePoint.CurvePointValue = curvePointDto.CurvePointValue;
             curvePoint.CreationDate = curvePointDto.CreationDate;
             curvePoint.AsOfDate = curvePointDto.AsOfDate;
 
-            _context.Set<CurvePoint>().Update(curvePoint);
+            _context.CurvePoints.Update(curvePoint);
             await _context.SaveChangesAsync();
-            return new CurvePointDto
-            {
-                CurveId = curvePoint.CurveId,
-                Term = curvePoint.Term,
-                CurvePointValue = curvePoint.CurvePointValue,
-                CreationDate = curvePoint.CreationDate,
-                AsOfDate = curvePoint.AsOfDate
-
-            };
+            return ToDto(curvePoint);
         }
 
         public async Task<bool> DeleteCurve(int id)
         {
             var curvePoint = await _context.CurvePoints.FindAsync(id);
-            if (curvePoint == null)
-            {
-                return false;
-            }
+            if (curvePoint == null) return false;
+
             _context.CurvePoints.Remove(curvePoint);
             await _context.SaveChangesAsync();
             return true;

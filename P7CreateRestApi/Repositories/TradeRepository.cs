@@ -114,6 +114,7 @@ namespace P7CreateRestApi.Repositories
             trade.SourceListId = tradeDto.SourceListId;
             trade.Side = tradeDto.Side;
 
+            _context.Trades.Update(trade);
             await _context.SaveChangesAsync();
             return ToDto(trade);
         }

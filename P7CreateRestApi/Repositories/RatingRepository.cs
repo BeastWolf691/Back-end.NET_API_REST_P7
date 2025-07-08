@@ -60,10 +60,10 @@ namespace P7CreateRestApi.Repositories
             return new RatingDto
             {
                 Id = rating.Id,
-                MoodysRating = ratingDto.MoodysRating,
-                SandPRating = ratingDto.SandPRating,
-                FitchRating = ratingDto.FitchRating,
-                OrderNumber = ratingDto.OrderNumber
+                MoodysRating = rating.MoodysRating,
+                SandPRating = rating.SandPRating,
+                FitchRating = rating.FitchRating,
+                OrderNumber = rating.OrderNumber
             };
         }
 

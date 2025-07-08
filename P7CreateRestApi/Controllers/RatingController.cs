@@ -1,5 +1,9 @@
+using System.Security.Cryptography;
 using Dot.Net.WebApi.Controllers.Domain;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using P7CreateRestApi.Models.Dto;
+using P7CreateRestApi.Services;
 
 namespace Dot.Net.WebApi.Controllers
 {
@@ -7,53 +11,118 @@ namespace Dot.Net.WebApi.Controllers
     [Route("[controller]")]
     public class RatingController : ControllerBase
     {
-        // TODO: Inject Rating service
+        private readonly RatingService _ratingService;
+        private readonly ILogger _logger;
 
-        [HttpGet]
-        [Route("list")]
-        public IActionResult Home()
+        public RatingController(RatingService ratingService, ILogger logger)
         {
-            // TODO: find all Rating, add to model
-            return Ok();
+            _ratingService = ratingService;
+            _logger = logger;
         }
 
         [HttpGet]
-        [Route("add")]
-        public IActionResult AddRatingForm([FromBody]Rating rating)
+        [Authorize]
+        public async Task<IActionResult> GetAllRatings()
         {
-            return Ok();
+            try
+            {
+                var ratings = await _ratingService.GetRatings();
+                return Ok(ratings);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching ratings");
+                return StatusCode(500, new { message = "Error while fetching ratings." });
+            }
         }
 
-        [HttpGet]
-        [Route("validate")]
-        public IActionResult Validate([FromBody]Rating rating)
+        [HttpGet("{id}")]
+        [Authorize]
+        public async Task<IActionResult> GetRatingById(int id)
         {
-            // TODO: check data valid and save to db, after saving return Rating list
-            return Ok();
-        }
-
-        [HttpGet]
-        [Route("update/{id}")]
-        public IActionResult ShowUpdateForm(int id)
-        {
-            // TODO: get Rating by Id and to model then show to the form
-            return Ok();
+            try
+            {
+                var rating = await _ratingService.GetRating(id);
+                if (rating == null)
+                {
+                    return NotFound(new { message = "Rating not found" });
+                }
+                return Ok(rating);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching rating by ID");
+                return StatusCode(500, new { message = "Error while fetching rating." });
+            }
         }
 
         [HttpPost]
-        [Route("update/{id}")]
-        public IActionResult UpdateRating(int id, [FromBody] Rating rating)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> AddRating([FromBody] RatingDto ratingDto)
         {
-            // TODO: check required fields, if valid call service to update Rating and return Rating list
-            return Ok();
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var createdRating = await _ratingService.AddRating(ratingDto);
+                var resultDto = new RatingDto
+                {
+                    Id = createdRating.Id,
+                    MoodysRating = createdRating.MoodysRating,
+                    SandPRating = createdRating.SandPRating,
+                    FitchRating = createdRating.FitchRating,
+                    OrderNumber = createdRating.OrderNumber,
+                };
+                return CreatedAtAction(nameof(GetRatingById), new { id = resultDto.Id }, resultDto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while adding rating");
+                return StatusCode(500, new { message = "Error while adding rating." });
+            }
         }
 
-        [HttpDelete]
-        [Route("{id}")]
-        public IActionResult DeleteRating(int id)
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateRating(int id, [FromBody] RatingDto ratingDto)
         {
-            // TODO: Find Rating by Id and delete the Rating, return to Rating list
-            return Ok();
+            try
+            {
+                var updateRating = await _ratingService.UpdateRating(id, ratingDto);
+                if (updateRating == null)
+                {
+                    return NotFound(new { message = "Rating not found for update." });
+                }
+                return Ok(updateRating);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while updating rating");
+                return StatusCode(500, new { message = "Error while updating rating." });
+            }
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteRating(int id)
+        {
+            try
+            {
+                var deleted = await _ratingService.DeleteRating(id);
+                if(!deleted)
+                {
+                    return NotFound(new { message = "Rating not found for deletion." });
+                }
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while deleting rating");
+                return StatusCode(500, new { message = "Error while deleting rating." });
+            }
         }
     }
 }

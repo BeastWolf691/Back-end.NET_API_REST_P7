@@ -21,7 +21,7 @@ namespace Dot.Net.WebApi.Controllers
 
         [HttpGet]
         [Authorize]
-        public async Task<IActionResult> GetCurves()
+        public async Task<IActionResult> GetAllCurves()
         {
             try
             {

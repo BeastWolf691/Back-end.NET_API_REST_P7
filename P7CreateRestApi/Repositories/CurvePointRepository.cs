@@ -1,7 +1,8 @@
 ﻿using Dot.Net.WebApi.Domain;
 using Microsoft.EntityFrameworkCore;
+using P7CreateRestApi.Data;
 using P7CreateRestApi.Models.Dto;
-using Dot.Net.WebApi.Data;
+
 
 namespace P7CreateRestApi.Repositories
 {

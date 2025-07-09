@@ -1,85 +1,88 @@
 using Dot.Net.WebApi.Domain;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using P7CreateRestApi.Models.Dto;
 using P7CreateRestApi.Repositories;
+using P7CreateRestApi.Services;
 
-namespace Dot.Net.WebApi.Controllers
+namespace P7CreateRestApi.Controllers
 {
     [ApiController]
     [Route("[controller]")]
+    [Authorize(Roles = "Admin")]
     public class UserController : ControllerBase
     {
-        private UserRepository _userRepository;
+        private readonly UserService _userService;
+        private readonly ILogger<UserController> _logger;
 
-        public UserController(UserRepository userRepository)
+        public UserController(UserService userService, ILogger<UserController> logger)
         {
-            _userRepository = userRepository;
+            _userService = userService;
+            _logger = logger;
         }
 
         [HttpGet]
-        [Route("list")]
-        public IActionResult Home()
+        public async Task<ActionResult<IEnumerable<UserReadDto>>> GetAllUsers()
         {
-            return Ok();
+            var users = await _userService.GetAllUsersAsync();
+            return Ok(users);
         }
 
-        [HttpGet]
-        [Route("add")]
-        public IActionResult AddUser([FromBody]User user)
+        [HttpGet("{id}")]
+        public async Task<ActionResult<UserReadDto>> GetUserById(string id)
         {
-            return Ok();
-        }
-
-        [HttpGet]
-        [Route("validate")]
-        public IActionResult Validate([FromBody]User user)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest();
-            }
-           
-           _userRepository.Add(user);
-
-            return Ok();
-        }
-
-        [HttpGet]
-        [Route("update/{id}")]
-        public IActionResult ShowUpdateForm(int id)
-        {
-            User user = _userRepository.FindById(id);
-            
+            var user = await _userService.GetUserByIdAsync(id);
             if (user == null)
-                throw new ArgumentException("Invalid user Id:" + id);
-
-            return Ok();
+                return NotFound();
+            return Ok(user);
         }
 
         [HttpPost]
-        [Route("update/{id}")]
-        public IActionResult UpdateUser(int id, [FromBody] User user)
+        public async Task<ActionResult<UserReadDto>> CreateUser(UserDto userDto)
         {
-            // TODO: check required fields, if valid call service to update Trade and return Trade list
-            return Ok();
+            var createdUser = await _userService.CreateUserAsync(userDto);
+            if (createdUser == null)
+                return StatusCode(500, new { message = "Error while creating user." });
+            return CreatedAtAction(nameof(GetUserById), new { id = createdUser.Id }, createdUser);
         }
 
-        [HttpDelete]
-        [Route("{id}")]
-        public IActionResult DeleteUser(int id)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateUser(string id, [FromBody] UserDto userDto)
         {
-            User user = _userRepository.FindById(id);
-            
-            if (user == null)
-                throw new ArgumentException("Invalid user Id:" + id);
-
-            return Ok();
+            try
+            {
+                var updated = await _userService.UpdateUserAsync(id, userDto);
+                if (!updated)
+                {
+                    return NotFound(new { message = "User not found for update." });
+                }
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while updating user");
+                return StatusCode(500, new { message = "Error while updating user." });
+            }
         }
 
-        [HttpGet]
-        [Route("/secure/article-details")]
-        public async Task<ActionResult<List<User>>> GetAllUserArticles()
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteUser(string id)
         {
-            return Ok();
+            try
+            {
+                var deleted = await _userService.DeleteUserAsync(id);
+                if (!deleted)
+                {
+                    return NotFound(new { message = "User not found for deletion." });
+                }
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while deleting user");
+                return StatusCode(500, new { message = "Error while deleting user." });
+            }
         }
     }
 }

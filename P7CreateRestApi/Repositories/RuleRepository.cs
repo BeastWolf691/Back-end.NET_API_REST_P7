@@ -15,64 +15,31 @@ namespace P7CreateRestApi.Repositories
             _context = context;
         }
 
-        private static RuleDto ToDto(RuleName rule) => new RuleDto
+        public async Task<IEnumerable<RuleName>> GetRules()
         {
-            Id = rule.Id,
-            Name = rule.Name,
-            Description = rule.Description,
-            Json = rule.Json,
-            Template = rule.Template,
-            SqlStr = rule.SqlStr,
-            SqlPart = rule.SqlPart
-        };
-
-        private static RuleName ToEntity(RuleDto ruleDto) => new RuleName
-        {
-            Name = ruleDto.Name,
-            Description = ruleDto.Description,
-            Json = ruleDto.Json,
-            Template = ruleDto.Template,
-            SqlStr = ruleDto.SqlStr,
-            SqlPart = ruleDto.SqlPart
-        };
-
-        public async Task<IEnumerable<RuleDto>> GetRules()
-        {
-            return await _context.RuleNames
-                .Select(rule => ToDto(rule))
-                .ToListAsync();
+            return await _context.RuleNames.ToListAsync();
         }
 
-        public async Task<RuleDto?> GetRule(int id)
+        public async Task<RuleName?> GetRule(int id)
         {
-            var rule = await _context.RuleNames.FindAsync(id);
-            return rule == null ? null : ToDto(rule);
+            return await _context.RuleNames.FindAsync(id);
         }
 
-        public async Task<RuleDto> AddRule(RuleDto ruleDto)
+        public async Task<RuleName> AddRule(RuleName rule)
         {
-            var rule = ToEntity(ruleDto);
             _context.RuleNames.Add(rule);
             await _context.SaveChangesAsync();
-
-            return ToDto(rule);
+            return rule;
         }
 
-        public async Task<RuleDto?> UpdateRule(int id, RuleDto ruleDto)
+        public async Task<RuleName?> UpdateRule(int id, RuleName ruleName)
         {
-            var rule = await _context.RuleNames.FindAsync(id);
-            if(rule == null) return null;
+            var existing = await _context.RuleNames.FindAsync(id);
+            if (existing == null) return null;
 
-            rule.Name = ruleDto.Name;
-            rule.Description = ruleDto.Description;
-            rule.Json = ruleDto.Json;
-            rule.Template = ruleDto.Template;
-            rule.SqlStr = ruleDto.SqlStr;
-            rule.SqlPart = ruleDto.SqlPart;
-
-            _context.RuleNames.Update(rule);
+            _context.Entry(existing).CurrentValues.SetValues(ruleName);
             await _context.SaveChangesAsync();
-            return ToDto(rule);
+            return existing;
         }
 
         public async Task<bool> DeleteRule(int id)

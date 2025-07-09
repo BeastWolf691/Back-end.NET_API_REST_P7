@@ -93,6 +93,7 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddAutoMapper(typeof(BidListProfile));
 builder.Services.AddAutoMapper(typeof(CurvePointProfile));
 builder.Services.AddAutoMapper(typeof(RatingProfile));
+builder.Services.AddAutoMapper(typeof(RuleProfile));
 
 // Controllers, Swagger, etc.
 builder.Services.AddControllers();

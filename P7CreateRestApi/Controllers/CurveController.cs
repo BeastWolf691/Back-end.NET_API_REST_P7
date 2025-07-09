@@ -9,13 +9,26 @@ namespace P7CreateRestApi.Controllers
     [Route("[controller]")]
     public class CurveController : ControllerBase
     {
-        private readonly CurvePointService _curvePointService;
+        private readonly ICurvePointService _curvePointService;
         private readonly ILogger<CurveController> _logger;
 
-        public CurveController(CurvePointService curvePointService, ILogger<CurveController> logger)
+        public CurveController(ICurvePointService curvePointService, ILogger<CurveController> logger)
         {
             _curvePointService = curvePointService;
             _logger = logger;
+        }
+
+        private void ValidateCurvePoint(CurvePointDto curvePointDto)
+        {
+            if (curvePointDto.Term < 0)
+            {
+                ModelState.AddModelError(nameof(curvePointDto.Term), "Le délai ne peut pas être négatif.");
+            }
+
+            if (curvePointDto.CurvePointValue < 0)
+            {
+                ModelState.AddModelError(nameof(curvePointDto.CurvePointValue), "La valeur ne peut pas être négative.");
+            }
         }
 
         [HttpGet]
@@ -29,8 +42,8 @@ namespace P7CreateRestApi.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while fetching bids");
-                return StatusCode(500, new { message = "Error while fetching bids." });
+                _logger.LogError(ex, "Error while fetching curves");
+                return StatusCode(500, new { message = "Error while fetching curves." });
             }
         }
 
@@ -58,7 +71,9 @@ namespace P7CreateRestApi.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddCurvePoint([FromBody]CurvePointDto curvePointDto)
         {
-            if(!ModelState.IsValid)
+            ValidateCurvePoint(curvePointDto);
+
+            if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
@@ -66,16 +81,7 @@ namespace P7CreateRestApi.Controllers
             try
             {
                 var createdCurve = await _curvePointService.AddCurve(curvePointDto);
-                var resultDto = new CurvePointDto
-                {
-                    Id = createdCurve.Id,
-                    CurveId = createdCurve.CurveId,
-                    Term = createdCurve.Term,
-                    CurvePointValue = createdCurve.CurvePointValue,
-                    AsOfDate = createdCurve.AsOfDate,
-                    CreationDate = createdCurve.CreationDate
-                };
-                return CreatedAtAction(nameof(GetCurveById), new { id = resultDto.Id }, resultDto);
+                return CreatedAtAction(nameof(GetCurveById), new { id = createdCurve.Id }, createdCurve);
             }
             catch (Exception ex)
             {
@@ -88,6 +94,12 @@ namespace P7CreateRestApi.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateCurvePoint(int id, [FromBody] CurvePointDto curvePointDto)
         {
+            ValidateCurvePoint(curvePointDto);
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             try
             {
                 var updatedCurve = await _curvePointService.UpdateCurve(id, curvePointDto);

@@ -72,15 +72,7 @@ namespace P7CreateRestApi.Controllers
             try
             {
                 var createdBid = await _bidService.AddBidList(bidDto);
-                var resultDto = new BidListDto
-                {
-                    BidListId = createdBid.BidListId,
-                    Account = createdBid.Account,
-                    BidType = createdBid.BidType,
-                    BidQuantity = createdBid.BidQuantity
-                };
-
-                return CreatedAtAction(nameof(GetBidById), new { id = resultDto.BidListId }, resultDto);
+                return CreatedAtAction(nameof(GetBidById), new { id = createdBid.BidListId }, createdBid);
             }
             catch (Exception ex)
             {

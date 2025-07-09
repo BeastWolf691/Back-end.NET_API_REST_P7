@@ -90,7 +90,8 @@ builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddScoped<IJwtService, JwtService>();
 
-builder.Services.AddAutoMapper(typeof(BidListProfile).Assembly);
+builder.Services.AddAutoMapper(typeof(BidListProfile));
+builder.Services.AddAutoMapper(typeof(CurvePointProfile));
 
 // Controllers, Swagger, etc.
 builder.Services.AddControllers();

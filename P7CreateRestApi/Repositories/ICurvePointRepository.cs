@@ -5,10 +5,10 @@ namespace P7CreateRestApi.Repositories
 {
     public interface ICurvePointRepository
     {
-        Task<IEnumerable<CurvePointDto>> GetCurves();
-        Task<CurvePointDto?> GetCurve(int id);
-        Task<CurvePointDto> AddCurve(CurvePointDto curvePointDto);
-        Task<CurvePointDto?> UpdateCurve(int id, CurvePointDto curvePointDto);
+        Task<IEnumerable<CurvePoint>> GetCurves();
+        Task<CurvePoint?> GetCurve(int id);
+        Task<CurvePoint> AddCurve(CurvePoint curvePoint);
+        Task<CurvePoint?> UpdateCurve(int id, CurvePoint curvePoint);
         Task<bool> DeleteCurve(int id);
     }
 }

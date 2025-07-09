@@ -1,4 +1,5 @@
-﻿using Dot.Net.WebApi.Domain;
+﻿using AutoMapper;
+using Dot.Net.WebApi.Domain;
 using P7CreateRestApi.Models.Dto;
 using P7CreateRestApi.Repositories;
 
@@ -7,36 +8,44 @@ namespace P7CreateRestApi.Services
     public class TradeService : ITradeService
     {
 
-        private readonly ITradeRepository _tradeRepository;
+        private readonly ITradeRepository _repository;
+        private readonly IMapper _mapper;
 
-        public TradeService(ITradeRepository tradeRepository)
+        public TradeService(ITradeRepository repository, IMapper mapper)
         {
-            _tradeRepository = tradeRepository;
+            _repository = repository;
+            _mapper = mapper;
         }
 
         public async Task<IEnumerable<TradeDto>> GetTrades()
         {
-            return await _tradeRepository.GetTrades();
+            var trades = await _repository.GetTrades();
+            return _mapper.Map<IEnumerable<TradeDto>>(trades);
         }
 
-        public async Task<TradeDto?> GetTrade(int id)
+        public async Task<TradeDto?> GetTradeById(int id)
         {
-            return await _tradeRepository.GetTrade(id);
+            var trade = await _repository.GetTradeById(id);
+            return trade == null ? null : _mapper.Map<TradeDto>(trade);
         }
 
         public async Task<TradeDto> AddTrade(TradeDto tradeDto)
         {
-            return await _tradeRepository.AddTrade(tradeDto);
+            var trade = _mapper.Map<Trade>(tradeDto);
+            var createdTrade = await _repository.AddTrade(trade);
+            return _mapper.Map<TradeDto>(createdTrade);
         }
 
-        public async Task<TradeDto?> UpdateTrade(int id, TradeDto tradeDto)
+        public async Task<TradeDto?> UpdateTrade(TradeDto tradeDto)
         {
-            return await _tradeRepository.UpdateTrade(id, tradeDto);
+            var trade = _mapper.Map<Trade>(tradeDto);
+            var updatedTrade = await _repository.UpdateTrade(trade);
+            return updatedTrade == null ? null : _mapper.Map<TradeDto>(updatedTrade);
         }
 
         public async Task<bool> DeleteTrade(int id)
         {
-            return await _tradeRepository.DeleteTrade(id);
+            return await _repository.DeleteTrade(id);
         }
     }
 }

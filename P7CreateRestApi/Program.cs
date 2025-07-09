@@ -94,6 +94,7 @@ builder.Services.AddAutoMapper(typeof(BidListProfile));
 builder.Services.AddAutoMapper(typeof(CurvePointProfile));
 builder.Services.AddAutoMapper(typeof(RatingProfile));
 builder.Services.AddAutoMapper(typeof(RuleProfile));
+builder.Services.AddAutoMapper(typeof(TradeProfile));
 
 // Controllers, Swagger, etc.
 builder.Services.AddControllers();

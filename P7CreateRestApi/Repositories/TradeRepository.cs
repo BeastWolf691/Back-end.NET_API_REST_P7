@@ -17,107 +17,31 @@ namespace P7CreateRestApi.Repositories
             _context = context;
         }
 
-        private static TradeDto ToDto(Trade trade) => new TradeDto
+        public async Task<IEnumerable<Trade>> GetTrades()
         {
-            TradeId = trade.TradeId,
-            Account = trade.Account,
-            AccountType = trade.AccountType,
-            BuyQuantity = trade.BuyQuantity,
-            SellQuantity = trade.SellQuantity,
-            BuyPrice = trade.BuyPrice,
-            SellPrice = trade.SellPrice,
-            TradeDate = trade.TradeDate,
-            TradeSecurity = trade.TradeSecurity,
-            TradeStatus = trade.TradeStatus,
-            Trader = trade.Trader,
-            Benchmark = trade.Benchmark,
-            Book = trade.Book,
-            CreationName = trade.CreationName,
-            CreationDate = trade.CreationDate,
-            RevisionName = trade.RevisionName,
-            RevisionDate = trade.RevisionDate,
-            DealName = trade.DealName,
-            DealType = trade.DealType,
-            SourceListId = trade.SourceListId,
-            Side = trade.Side
-        };
-
-        private static Trade ToEntity(TradeDto tradeDto) => new Trade
-        {
-            TradeId = tradeDto.TradeId,
-            Account = tradeDto.Account,
-            AccountType = tradeDto.AccountType,
-            BuyQuantity = tradeDto.BuyQuantity,
-            SellQuantity = tradeDto.SellQuantity,
-            BuyPrice = tradeDto.BuyPrice,
-            SellPrice = tradeDto.SellPrice,
-            TradeDate = tradeDto.TradeDate,
-            TradeSecurity = tradeDto.TradeSecurity,
-            TradeStatus = tradeDto.TradeStatus,
-            Trader = tradeDto.Trader,
-            Benchmark = tradeDto.Benchmark,
-            Book = tradeDto.Book,
-            CreationName = tradeDto.CreationName,
-            CreationDate = tradeDto.CreationDate,
-            RevisionName = tradeDto.RevisionName,
-            RevisionDate = tradeDto.RevisionDate,
-            DealName = tradeDto.DealName,
-            DealType = tradeDto.DealType,
-            SourceListId = tradeDto.SourceListId,
-            Side = tradeDto.Side
-        };
-
-        public async Task<IEnumerable<TradeDto>> GetTrades()
-        {
-            return await _context.Trades
-                .Select(trade => ToDto(trade))
-                .ToListAsync();
+            return await _context.Trades.ToListAsync();
         }
 
-        public async Task<TradeDto?> GetTrade(int id)
+        public async Task<Trade?> GetTradeById(int id)
         {
-            var trade = await _context.Trades.FindAsync(id);
-            return trade is null ? null : ToDto(trade);
+            return await _context.Trades.FindAsync(id);
         }
 
-        public async Task<TradeDto> AddTrade(TradeDto tradeDto)
+        public async Task<Trade> AddTrade(Trade trade)
         {
-            var trade = ToEntity(tradeDto);
             _context.Trades.Add(trade);
             await _context.SaveChangesAsync();
-            return ToDto(trade);
+            return trade;
         }
 
-        public async Task<TradeDto?> UpdateTrade(int id, TradeDto tradeDto)
+        public async Task<Trade?> UpdateTrade(Trade trade)
         {
-            var trade = await _context.Trades.FindAsync(id);
-            if (trade == null) return null;
+            var existing = await _context.Trades.FindAsync(trade.TradeId);
+            if (existing == null) return null;
 
-            // Mise à jour des champs
-            trade.Account = tradeDto.Account;
-            trade.AccountType = tradeDto.AccountType;
-            trade.BuyQuantity = tradeDto.BuyQuantity;
-            trade.SellQuantity = tradeDto.SellQuantity;
-            trade.BuyPrice = tradeDto.BuyPrice;
-            trade.SellPrice = tradeDto.SellPrice;
-            trade.TradeDate = tradeDto.TradeDate;
-            trade.TradeSecurity = tradeDto.TradeSecurity;
-            trade.TradeStatus = tradeDto.TradeStatus;
-            trade.Trader = tradeDto.Trader;
-            trade.Benchmark = tradeDto.Benchmark;
-            trade.Book = tradeDto.Book;
-            trade.CreationName = tradeDto.CreationName;
-            trade.CreationDate = tradeDto.CreationDate;
-            trade.RevisionName = tradeDto.RevisionName;
-            trade.RevisionDate = tradeDto.RevisionDate;
-            trade.DealName = tradeDto.DealName;
-            trade.DealType = tradeDto.DealType;
-            trade.SourceListId = tradeDto.SourceListId;
-            trade.Side = tradeDto.Side;
-
-            _context.Trades.Update(trade);
+            _context.Entry(existing).CurrentValues.SetValues(trade);
             await _context.SaveChangesAsync();
-            return ToDto(trade);
+            return existing;
         }
 
         public async Task<bool> DeleteTrade(int id)

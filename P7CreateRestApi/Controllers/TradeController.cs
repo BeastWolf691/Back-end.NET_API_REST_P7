@@ -10,13 +10,33 @@ namespace P7CreateRestApi.Controllers
     public class TradeController : ControllerBase
     {
 
-        private readonly TradeService _tradeService;
+        private readonly ITradeService _tradeService;
         private readonly ILogger<TradeController> _logger;
 
-        public TradeController(TradeService tradeService, ILogger<TradeController> logger)
+        public TradeController(ITradeService tradeService, ILogger<TradeController> logger)
         {
             _tradeService = tradeService;
             _logger = logger;
+        }
+
+        private void ValidateTrade(TradeDto tradeDto)
+        {
+            if (tradeDto.BuyQuantity < 0)
+            {
+                ModelState.AddModelError(nameof(tradeDto.BuyQuantity), "La quantité achetée ne peut pas être négative.");
+            }
+            if (tradeDto.SellQuantity < 0)
+            {
+                ModelState.AddModelError(nameof(tradeDto.SellQuantity), "La quantité vendue ne peut pas être négative.");
+            }
+            if (tradeDto.BuyPrice < 0)
+            {
+                ModelState.AddModelError(nameof(tradeDto.BuyPrice), "Le prix d'achat ne peut pas être négatif.");
+            }
+            if (tradeDto.SellPrice < 0)
+            {
+                ModelState.AddModelError(nameof(tradeDto.SellPrice), "Le prix de vente ne peut pas être négatif.");
+            }
         }
 
         [HttpGet]
@@ -41,7 +61,7 @@ namespace P7CreateRestApi.Controllers
         {
             try
             {
-                var trade = await _tradeService.GetTrade(id);
+                var trade = await _tradeService.GetTradeById(id);
                 if (trade == null)
                 {
                     return NotFound(new { message = "Trade not found." });
@@ -59,55 +79,33 @@ namespace P7CreateRestApi.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddTrade([FromBody] TradeDto tradeDto)
         {
+            ValidateTrade(tradeDto);
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
 
             try
             {
                 var createdTrade = await _tradeService.AddTrade(tradeDto);
-                var resultDto = new TradeDto
-                {
-                    TradeId = createdTrade.TradeId,
-                    Account = createdTrade.Account,
-                    AccountType = createdTrade.AccountType,
-                    BuyQuantity = createdTrade.BuyQuantity,
-                    SellQuantity = createdTrade.SellQuantity,
-                    BuyPrice = createdTrade.BuyPrice,
-                    SellPrice = createdTrade.SellPrice,
-                    TradeDate = createdTrade.TradeDate,
-                    TradeSecurity = createdTrade.TradeSecurity,
-                    TradeStatus = createdTrade.TradeStatus,
-                    Trader = createdTrade.Trader,
-                    Benchmark = createdTrade.Benchmark,
-                    Book = createdTrade.Book,
-                    CreationName = createdTrade.CreationName,
-                    CreationDate = createdTrade.CreationDate,
-                    RevisionName = createdTrade.RevisionName,
-                    RevisionDate = createdTrade.RevisionDate,
-                    DealName = createdTrade.DealName,
-                    DealType = createdTrade.DealType,
-                    SourceListId = createdTrade.SourceListId,
-                    Side = createdTrade.Side
-                };
-                return CreatedAtAction(nameof(GetTradeById), new { id = resultDto.TradeId }, resultDto);
+                return CreatedAtAction(nameof(GetTradeById), new { id = createdTrade.TradeId }, createdTrade);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while adding trade");
                 return StatusCode(500, new { message = "Error while adding trade." });
             }
-
         }
 
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateTrade(int id, [FromBody] TradeDto tradeDto)
         {
+            ValidateTrade(tradeDto);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             try
             {
-                var updateTrade = await _tradeService.UpdateTrade(id, tradeDto);
+                var updateTrade = await _tradeService.UpdateTrade(tradeDto);
                 if (updateTrade == null)
                 {
                     return NotFound(new { message = "Trade not found for update." });

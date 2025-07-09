@@ -1,13 +1,14 @@
-﻿using P7CreateRestApi.Models.Dto;
+﻿using Dot.Net.WebApi.Domain;
+using P7CreateRestApi.Models.Dto;
 
 namespace P7CreateRestApi.Repositories
 {
     public interface ITradeRepository
     {
-        Task<IEnumerable<TradeDto>> GetTrades();
-        Task<TradeDto?> GetTrade(int id);
-        Task<TradeDto> AddTrade(TradeDto tradeDto);
-        Task<TradeDto?> UpdateTrade(int id, TradeDto tradeDto);
+        Task<IEnumerable<Trade>> GetTrades();
+        Task<Trade?> GetTradeById(int id);
+        Task<Trade> AddTrade(Trade trade);
+        Task<Trade?> UpdateTrade(Trade trade);
         Task<bool> DeleteTrade(int id);
     }
 }

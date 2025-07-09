@@ -15,56 +15,33 @@ namespace P7CreateRestApi.Repositories
             _context = context;
         }
 
-        private static BidListDto ToDto(BidList bid) => new BidListDto
+        public async Task<IEnumerable<BidList>> GetBidLists()
         {
-            BidListId = bid.BidListId,
-            Account = bid.Account,
-            BidType = bid.BidType,
-            BidQuantity = bid.BidQuantity
-        };
-
-        private static BidList ToEntity(BidListDto bidListDto) => new BidList
-        {
-            Account = bidListDto.Account,
-            BidType = bidListDto.BidType,
-            BidQuantity = bidListDto.BidQuantity
-        };
-
-        public async Task<IEnumerable<BidListDto>> GetBidLists()
-        {
-            return await _context.BidLists
-                .Select(bid => ToDto(bid))
-                .ToListAsync();
+            return await _context.BidLists.ToListAsync();
         }
 
-        public async Task<BidListDto?> GetBidList(int id)
+        public async Task<BidList?> GetBidList(int id)
         {
-            var bidList = await _context.BidLists.FindAsync(id);
-            return bidList is null ? null : ToDto(bidList);
+            return await _context.BidLists.FindAsync(id);
         }
 
-        public async Task<BidListDto> AddBidList(BidListDto bidListDto)
+        public async Task<BidList> AddBidList(BidList bidList)
         {
-            var bidList = ToEntity(bidListDto);
             _context.BidLists.Add(bidList);
             await _context.SaveChangesAsync();
-            return ToDto(bidList);
+            return bidList;
         }
 
-        public async Task<BidListDto?> UpdateBidList(int id, BidListDto bidListDto)
+        public async Task<BidList?> UpdateBidList(int id, BidList bidList)
         {
-            var bidList = await _context.BidLists.FindAsync(id);
+            var existingBid = await _context.BidLists.FindAsync(id);
+            if (existingBid == null) return null;
 
-            if (bidList == null) return null;
+            _context.Entry(existingBid).CurrentValues.SetValues(bidList);
 
-            bidList.Account = bidListDto.Account;
-            bidList.BidType = bidListDto.BidType;
-            bidList.BidQuantity = bidListDto.BidQuantity;
-
-            _context.BidLists.Update(bidList);
             await _context.SaveChangesAsync();
 
-            return ToDto(bidList);
+            return existingBid;
         }
 
         public async Task<bool> DeleteBidList(int id)

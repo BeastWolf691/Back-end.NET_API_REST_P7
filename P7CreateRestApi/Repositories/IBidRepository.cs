@@ -5,10 +5,10 @@ namespace P7CreateRestApi.Repositories
 {
     public interface IBidRepository
     {
-        Task<IEnumerable<BidListDto>> GetBidLists();
-        Task<BidListDto?> GetBidList(int id);
-        Task<BidListDto> AddBidList(BidListDto bidListDto);
-        Task<BidListDto?> UpdateBidList(int id, BidListDto bidListDto);
+        Task<IEnumerable<BidList>> GetBidLists();
+        Task<BidList?> GetBidList(int id);
+        Task<BidList> AddBidList(BidList bidList);
+        Task<BidList?> UpdateBidList(int id, BidList bidList);
         Task<bool> DeleteBidList(int id);
     }
 }

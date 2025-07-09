@@ -10,15 +10,14 @@ namespace P7CreateRestApi.Controllers
     public class BidListController : ControllerBase
     {
 
-        private readonly BidService _bidService;
+        private readonly IBidService _bidService;
         private readonly ILogger<BidListController> _logger;
 
-        public BidListController(BidService bidService, ILogger<BidListController> logger)
+        public BidListController(IBidService bidService, ILogger<BidListController> logger)
         {
             _bidService = bidService;
             _logger = logger;
         }
-
 
         [HttpGet]
         [Authorize]
@@ -60,6 +59,11 @@ namespace P7CreateRestApi.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddBid([FromBody] BidListDto bidDto)
         {
+            if (string.IsNullOrWhiteSpace(bidDto.Account))
+                ModelState.AddModelError(nameof(bidDto.Account), "Le compte est obligatoire.");
+            if (string.IsNullOrWhiteSpace(bidDto.BidType))
+                ModelState.AddModelError(nameof(bidDto.BidType), "Le type de l'offre est obligatoire.");
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
@@ -89,6 +93,14 @@ namespace P7CreateRestApi.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateBid(int id, [FromBody] BidListDto bidDto)
         {
+            if (bidDto.Account != null && string.IsNullOrWhiteSpace(bidDto.Account))
+                ModelState.AddModelError(nameof(bidDto.Account), "Le compte ne peut pas être vide.");
+            if (bidDto.BidType != null && string.IsNullOrWhiteSpace(bidDto.BidType))
+                ModelState.AddModelError(nameof(bidDto.BidType), "Le type de l'offre ne peut pas être vide.");
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             try
             {
                 var updatedBid = await _bidService.UpdateBidList(id, bidDto);

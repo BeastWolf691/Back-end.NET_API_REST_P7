@@ -5,8 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using P7CreateRestApi.Data;
-using P7CreateRestApi.Domain;
-using P7CreateRestApi.Interfaces;
+using P7CreateRestApi.MappingProfiles;
 using P7CreateRestApi.Repositories;
 using P7CreateRestApi.Services;
 using Serilog;
@@ -90,6 +89,8 @@ builder.Services.AddScoped<ITradeService, TradeService>();
 builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddScoped<IJwtService, JwtService>();
+
+builder.Services.AddAutoMapper(typeof(BidListProfile).Assembly);
 
 // Controllers, Swagger, etc.
 builder.Services.AddControllers();

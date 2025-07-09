@@ -18,13 +18,12 @@ namespace P7CreateRestApi.Services
             _userManager = userManager;
         }
 
-        public async Task<string> GenerateJwtTokenAsync(User user)
+        public async Task<string> GenerateJwtToken(User user)
         {
-
             var tokenHandler = new JwtSecurityTokenHandler();
 
             var issuer = _configuration["Authentication:Schemes:Bearer:ValidIssuer"];
-            var audience = _configuration["Authentication:Schemes:Bearer:ValidAudiences"];
+            var audience = _configuration["Authentication:Schemes:Bearer:ValidAudience"];
             var signingKey = _configuration["Authentication:Schemes:Bearer:Secret"];
 
             if (string.IsNullOrEmpty(issuer) || string.IsNullOrEmpty(audience) || string.IsNullOrEmpty(signingKey))
@@ -38,11 +37,10 @@ namespace P7CreateRestApi.Services
 
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, user.UserName),
+                new Claim(ClaimTypes.Name, user.UserName!),
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
             };
 
-            // Ajout des rôles aux claims
             claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
             var tokenDescriptor = new SecurityTokenDescriptor

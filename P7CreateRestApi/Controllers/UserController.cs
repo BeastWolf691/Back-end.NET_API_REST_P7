@@ -66,7 +66,7 @@ namespace P7CreateRestApi.Controllers
             var createdUser = await _userService.GetUserById(userDto.UserName);
             var createdUserDto = createdUser; // déjà UserReadDto
 
-            return CreatedAtAction(nameof(GetUserById), new { id = createdUserDto.Id }, createdUserDto);
+            return CreatedAtAction(nameof(GetUserById), new { id = createdUserDto!.Id }, createdUserDto);
         }
 
         // Mise à jour utilisateur (sans changer le mot de passe ici)

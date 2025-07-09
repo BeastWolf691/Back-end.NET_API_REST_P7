@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using P7CreateRestApi.Data;
+using P7CreateRestApi.MapperProfiles;
 using P7CreateRestApi.MappingProfiles;
 using P7CreateRestApi.Repositories;
 using P7CreateRestApi.Services;
@@ -63,7 +64,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = issuer,
             ValidAudience = audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret!))
         };
     });
 
@@ -95,6 +96,7 @@ builder.Services.AddAutoMapper(typeof(CurvePointProfile));
 builder.Services.AddAutoMapper(typeof(RatingProfile));
 builder.Services.AddAutoMapper(typeof(RuleProfile));
 builder.Services.AddAutoMapper(typeof(TradeProfile));
+builder.Services.AddAutoMapper(typeof(UserProfile));
 
 // Controllers, Swagger, etc.
 builder.Services.AddControllers();
@@ -102,9 +104,9 @@ builder.Services.AddControllers();
 var app = builder.Build();
 
 // Seed Roles (Admin, User)
-using (var scope = app.Services.CreateScope())
+async Task SeedRoles(IServiceProvider serviceProvider)
 {
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var roles = new[] { "Admin", "User" };
 
     foreach (var role in roles)
@@ -114,6 +116,12 @@ using (var scope = app.Services.CreateScope())
             await roleManager.CreateAsync(new IdentityRole(role));
         }
     }
+}
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    await SeedRoles(services);
 }
 
 if (app.Environment.IsDevelopment())

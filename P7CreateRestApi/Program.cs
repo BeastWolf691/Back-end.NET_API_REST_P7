@@ -1,68 +1,126 @@
+using System.Text;
 using Dot.Net.WebApi.Domain;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using P7CreateRestApi.Data;
+using P7CreateRestApi.Domain;
+using P7CreateRestApi.Interfaces;
 using P7CreateRestApi.Repositories;
 using P7CreateRestApi.Services;
+using Serilog;
+using Serilog.Events;
 
-namespace P7CreateRestApi
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Debug()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+    .Enrich.FromLogContext()
+    .WriteTo.File("Logs/P7CreateRestApi-.log", rollingInterval: RollingInterval.Month)
+    .CreateLogger();
+
+builder.Host.UseSerilog();
+
+// Load User Secrets (for local development)
+builder.Configuration.AddUserSecrets<Program>();
+
+// Configuration DB
+builder.Services.AddDbContext<LocalDbContext>(options =>
+        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Identity
+builder.Services.AddIdentity<User, IdentityRole>(options =>
 {
-    public class Program
+    options.SignIn.RequireConfirmedAccount = true;
+    options.User.RequireUniqueEmail = true;
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequiredLength = 8;
+    options.Lockout.MaxFailedAccessAttempts = 3;
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(10);
+})
+.AddEntityFrameworkStores<LocalDbContext>()
+.AddDefaultTokenProviders();
+
+// JWT Authentication
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
     {
-        public static async Task Main(string[] args)
+        var issuer = builder.Configuration["Authentication:Schemes:Bearer:ValidIssuer"];
+        var audience = builder.Configuration["Authentication:Schemes:Bearer:ValidAudience"];
+        var secret = builder.Configuration["Authentication:Schemes:Bearer:Secret"];
+
+        options.TokenValidationParameters = new TokenValidationParameters
         {
-            var builder = WebApplication.CreateBuilder(args);
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = issuer,
+            ValidAudience = audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
+        };
+    });
 
-            // Configuration DB
-            builder.Services.AddDbContext<LocalDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+// Authorization Policies
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminPolicy", policy => policy.RequireRole("Admin"));
+});
 
-            // Ajout d'Identity (User + Password hashing)
-            builder.Services.AddIdentity<User, IdentityRole>()
-                .AddEntityFrameworkStores<LocalDbContext>()
-                .AddDefaultTokenProviders();
+// Déclaration des services (Dependency Injection)
+builder.Services.AddScoped<IBidRepository, BidRepository>();
+builder.Services.AddScoped<ICurvePointRepository, CurvePointRepository>();
+builder.Services.AddScoped<IRatingRepository, RatingRepository>();
+builder.Services.AddScoped<IRuleRepository, RuleRepository>();
+builder.Services.AddScoped<ITradeRepository, TradeRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
-            // Déclaration des services (Dependency Injection)
-            builder.Services.AddScoped<IBidRepository, BidRepository>();
-            builder.Services.AddScoped<ICurvePointRepository, CurvePointRepository>();
-            builder.Services.AddScoped<IRatingRepository, RatingRepository>();
-            builder.Services.AddScoped<IRuleRepository, RuleRepository>();
-            builder.Services.AddScoped<ITradeRepository, TradeRepository>();
-            builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IBidService, BidService>();
+builder.Services.AddScoped<ICurvePointService, CurvePointService>();
+builder.Services.AddScoped<IRatingService, RatingService>();
+builder.Services.AddScoped<IRuleService, RuleService>();
+builder.Services.AddScoped<ITradeService, TradeService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
-            builder.Services.AddScoped<IBidService, BidService>();
-            builder.Services.AddScoped<ICurvePointService, CurvePointService>();
-            builder.Services.AddScoped<IRatingService, RatingService>();
-            builder.Services.AddScoped<IRuleService, RuleService>();
-            builder.Services.AddScoped<ITradeService, TradeService>();
-            builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
 
-            // Authentification & Autorisation
-            builder.Services.AddAuthentication();
-            builder.Services.AddAuthorization();
+// Controllers, Swagger, etc.
+builder.Services.AddControllers();
 
-            // Controllers, Swagger, etc.
-            builder.Services.AddControllers();
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+var app = builder.Build();
 
-            var app = builder.Build();
+// Seed Roles (Admin, User)
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var roles = new[] { "Admin", "User" };
 
-            // Pipeline HTTP
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
-
-            app.UseHttpsRedirection();
-
-            app.UseAuthentication();
-            app.UseAuthorization();
-
-            app.MapControllers();
-
-            app.Run();
+    foreach (var role in roles)
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+        {
+            await roleManager.CreateAsync(new IdentityRole(role));
         }
     }
 }
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+
+app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();

@@ -72,11 +72,8 @@ namespace P7CreateRestApi.Controllers
         public async Task<IActionResult> AddCurvePoint([FromBody]CurvePointDto curvePointDto)
         {
             ValidateCurvePoint(curvePointDto);
-
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
 
             try
             {
@@ -95,11 +92,9 @@ namespace P7CreateRestApi.Controllers
         public async Task<IActionResult> UpdateCurvePoint(int id, [FromBody] CurvePointDto curvePointDto)
         {
             ValidateCurvePoint(curvePointDto);
-
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
+
             try
             {
                 var updatedCurve = await _curvePointService.UpdateCurve(id, curvePointDto);

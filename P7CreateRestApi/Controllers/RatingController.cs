@@ -18,6 +18,27 @@ namespace P7CreateRestApi.Controllers
             _logger = logger;
         }
 
+        private void ValidateRatingDto(RatingDto ratingDto)
+        {
+            if (string.IsNullOrWhiteSpace(ratingDto.MoodysRating) || ratingDto.MoodysRating.Length > 50)
+            {
+                ModelState.AddModelError(nameof(ratingDto.MoodysRating), "La note de solvabilité Moody's est obligatoire et ne doit pas excéder 50 caractères.");
+            }
+            if (string.IsNullOrWhiteSpace(ratingDto.SandPRating) || ratingDto.SandPRating.Length > 50)
+            {
+                ModelState.AddModelError(nameof(ratingDto.SandPRating), "La note de solvabilité S&P est obligatoire et ne doit pas excéder 50 caractères.");
+            }
+            if (string.IsNullOrWhiteSpace(ratingDto.FitchRating) || ratingDto.FitchRating.Length > 50)
+            {
+                ModelState.AddModelError(nameof(ratingDto.FitchRating), "La note de solvabilité Fitch est obligatoire et ne doit pas excéder 50 caractères.");
+            }
+            if (ratingDto.OrderNumber.HasValue && ratingDto.OrderNumber < 0)
+            {
+                ModelState.AddModelError(nameof(ratingDto.OrderNumber), "Le numéro de commande ne peut pas être négatif.");
+            }
+        }
+
+
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> GetAllRatings()
@@ -58,23 +79,14 @@ namespace P7CreateRestApi.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddRating([FromBody] RatingDto ratingDto)
         {
+            ValidateRatingDto(ratingDto);
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
 
             try
             {
                 var createdRating = await _ratingService.AddRating(ratingDto);
-                var resultDto = new RatingDto
-                {
-                    Id = createdRating.Id,
-                    MoodysRating = createdRating.MoodysRating,
-                    SandPRating = createdRating.SandPRating,
-                    FitchRating = createdRating.FitchRating,
-                    OrderNumber = createdRating.OrderNumber,
-                };
-                return CreatedAtAction(nameof(GetRatingById), new { id = resultDto.Id }, resultDto);
+                return CreatedAtAction(nameof(GetRatingById), new { id = createdRating.Id }, createdRating);
             }
             catch (Exception ex)
             {
@@ -87,6 +99,10 @@ namespace P7CreateRestApi.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateRating(int id, [FromBody] RatingDto ratingDto)
         {
+            ValidateRatingDto(ratingDto);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             try
             {
                 var updateRating = await _ratingService.UpdateRating(id, ratingDto);

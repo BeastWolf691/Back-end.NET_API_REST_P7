@@ -1,96 +1,44 @@
 using Dot.Net.WebApi.Domain;
-using Microsoft.EntityFrameworkCore;
-using P7CreateRestApi.Models.Dto;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
-using P7CreateRestApi.Data;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace P7CreateRestApi.Repositories
 {
     public class UserRepository : IUserRepository
     {
-        private readonly LocalDbContext _context;
         private readonly UserManager<User> _userManager;
 
-        public UserRepository(LocalDbContext context, UserManager<User> userManager)
+        public UserRepository(UserManager<User> userManager)
         {
-            _context = context;
             _userManager = userManager;
         }
 
-        public async Task<IEnumerable<UserReadDto>> GetAllUsersAsync()
+        public async Task<IEnumerable<User>> GetAllUsers()
         {
-            var users = _userManager.Users;
+            return await _userManager.Users.ToListAsync();
+        }
 
-            return users.Select(u => new UserReadDto
-            {
-                Id = u.Id,
-                UserName = u.UserName,
-                FullName = u.FullName
-            }).ToList();
+        public async Task<User?> GetUserById(string id)
+        {
+            return await _userManager.FindByIdAsync(id);
         }
 
 
-        public async Task<UserReadDto?> GetUserByIdAsync(string id)
+        public async Task<IdentityResult> AddUser(User user, string password)
         {
-            var user = await _userManager.FindByIdAsync(id);
-            if (user == null) return null;
-
-            return new UserReadDto
-            {
-                Id = user.Id,
-                UserName = user.UserName,
-                FullName = user.FullName
-            };
+            return await _userManager.CreateAsync(user, password);
         }
 
-        public async Task<UserReadDto?> CreateUserAsync(UserDto userDto)
+        public async Task<IdentityResult> UpdateUser(User user)
         {
-            var user = new User
-            {
-                UserName = userDto.UserName,
-                FullName = userDto.FullName
-            };
-
-            var result = await _userManager.CreateAsync(user, userDto.Password);
-            if (!result.Succeeded) return null;
-
-            return new UserReadDto
-            {
-                Id = user.Id,
-                UserName = user.UserName,
-                FullName = user.FullName
-            };
+            return await _userManager.UpdateAsync(user);
         }
 
-        public async Task<bool> UpdateUserAsync(string id, UserDto userDto)
+        public async Task<IdentityResult> DeleteUser(User user)
         {
-            var user = await _userManager.FindByIdAsync(id);
-            if (user == null) return false;
-
-            user.UserName = userDto.UserName;
-            user.FullName = userDto.FullName;
-            var result = await _userManager.UpdateAsync(user);
-            if (!result.Succeeded) return false;
-
-            // Modifier le mot de passe si un nouveau est fourni
-            if (!string.IsNullOrEmpty(userDto.Password))
-            {
-                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-                var pwdResult = await _userManager.ResetPasswordAsync(user, token, userDto.Password);
-                if (!pwdResult.Succeeded) return false;
-            }
-
-            return true;
-        }
-
-        public async Task<bool> DeleteUserAsync(string id)
-        {
-            var user = await _userManager.FindByIdAsync(id);
-            if (user == null) return false;
-
-            var result = await _userManager.DeleteAsync(user);
-            return result.Succeeded;
+            return await _userManager.DeleteAsync(user);
         }
     }
 }

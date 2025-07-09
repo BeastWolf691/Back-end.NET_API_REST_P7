@@ -1,13 +1,14 @@
-﻿using P7CreateRestApi.Models.Dto;
+﻿using Microsoft.AspNetCore.Identity;
+using P7CreateRestApi.Models.Dto;
 
 namespace P7CreateRestApi.Services
 {
     public interface IUserService
     {
-        Task<IEnumerable<UserReadDto>> GetAllUsersAsync();
-        Task<UserReadDto?> GetUserByIdAsync(string id);
-        Task<UserReadDto?> CreateUserAsync(UserDto userDto);
-        Task<bool> UpdateUserAsync(string id, UserDto userDto);
-        Task<bool> DeleteUserAsync(string id);
+        Task<IEnumerable<UserReadDto>> GetAllUsers();
+        Task<UserReadDto?> GetUserById(string id);
+        Task<IdentityResult> AddUser(UserDto userDto, string password);
+        Task<IdentityResult> UpdateUser(UserDto userDto);
+        Task<IdentityResult> DeleteUser(string id);
     }
 }

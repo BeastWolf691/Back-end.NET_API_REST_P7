@@ -1,16 +1,16 @@
-﻿using Dot.Net.WebApi.Domain;
-using Microsoft.AspNetCore.Mvc;
-using P7CreateRestApi.Models.Dto;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using Dot.Net.WebApi.Domain;
+using Microsoft.AspNetCore.Identity;
 
 namespace P7CreateRestApi.Repositories
 {
     public interface IUserRepository
     {
-        Task<IEnumerable<UserReadDto>> GetAllUsersAsync();
-        Task<UserReadDto?> GetUserByIdAsync(string id);
-        Task<UserReadDto?> CreateUserAsync(UserDto userDto);
-        Task<bool> UpdateUserAsync(string id, UserDto userDto);
-        Task<bool> DeleteUserAsync(string id);
+        Task<IEnumerable<User>> GetAllUsers();
+        Task<User?> GetUserById(string id);
+        Task<IdentityResult> AddUser(User user, string password);
+        Task<IdentityResult> UpdateUser(User user);
+        Task<IdentityResult> DeleteUser(User user);
     }
-
 }

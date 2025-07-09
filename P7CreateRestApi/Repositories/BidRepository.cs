@@ -38,9 +38,7 @@ namespace P7CreateRestApi.Repositories
             if (existingBid == null) return null;
 
             _context.Entry(existingBid).CurrentValues.SetValues(bidList);
-
             await _context.SaveChangesAsync();
-
             return existingBid;
         }
 

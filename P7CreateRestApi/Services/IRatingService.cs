@@ -6,7 +6,7 @@ namespace P7CreateRestApi.Services
     {
         Task<IEnumerable<RatingDto>> GetRatings();
         Task<RatingDto?> GetRating(int id);
-        Task<RatingDto> AddRating(RatingDto rating);
+        Task<RatingDto> AddRating(RatingDto ratingDto);
         Task<RatingDto?> UpdateRating(int id, RatingDto ratingDto);
         Task<bool> DeleteRating(int id);
     }

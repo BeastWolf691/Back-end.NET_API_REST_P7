@@ -15,57 +15,31 @@ namespace P7CreateRestApi.Repositories
             _context = context;
         }
 
-        private static RatingDto ToDto(Rating rating) => new RatingDto
+        public async Task<IEnumerable<Rating>> GetRatings()
         {
-            Id = rating.Id,
-            MoodysRating = rating.MoodysRating,
-            SandPRating = rating.SandPRating,
-            FitchRating = rating.FitchRating,
-            OrderNumber = rating.OrderNumber
-        };
-
-        private static Rating ToEntity(RatingDto ratingDto) => new Rating
-        {
-            MoodysRating = ratingDto.MoodysRating,
-            SandPRating = ratingDto.SandPRating,
-            FitchRating = ratingDto.FitchRating,
-            OrderNumber = ratingDto.OrderNumber
-        };
-
-        public async Task<IEnumerable<RatingDto>> GetRatings()
-        {
-            return await _context.Ratings
-                .Select(rating => ToDto(rating))
-                .ToListAsync();
+            return await _context.Ratings.ToListAsync();
         }
 
-        public async Task<RatingDto?> GetRating(int id)
+        public async Task<Rating?> GetRating(int id)
         {
-            var rating = await _context.Ratings.FindAsync(id);
-            return rating == null ? null : ToDto(rating);
+            return await _context.Ratings.FindAsync(id);
         }
 
-        public async Task<RatingDto> AddRating(RatingDto ratingDto)
+        public async Task<Rating> AddRating(Rating rating)
         {
-            var rating = ToEntity(ratingDto);
             _context.Ratings.Add(rating);
             await _context.SaveChangesAsync();
-            return ToDto(rating);
+            return rating;
         }
 
-        public async Task<RatingDto?> UpdateRating(int id, RatingDto ratingDto)
+        public async Task<Rating?> UpdateRating(int id, Rating rating)
         {
-            var rating = await _context.Ratings.FindAsync(id);
-            if (rating == null) return null;
+            var existingRating = await _context.Ratings.FindAsync(id);
+            if (existingRating == null) return null;
 
-            rating.MoodysRating = ratingDto.MoodysRating;
-            rating.SandPRating = ratingDto.SandPRating;
-            rating.FitchRating = ratingDto.FitchRating;
-            rating.OrderNumber = ratingDto.OrderNumber;
-
-            _context.Ratings.Update(rating);
+            _context.Entry(existingRating).CurrentValues.SetValues(rating);
             await _context.SaveChangesAsync();
-            return ToDto(rating);
+            return existingRating;
         }
 
         public async Task<bool> DeleteRating(int id)

@@ -35,13 +35,7 @@ namespace P7CreateRestApi.Repositories
             var existing = await _context.CurvePoints.FindAsync(id);
             if (existing == null) return null;
 
-            existing.CurveId = curvePoint.CurveId;
-            existing.Term = curvePoint.Term;
-            existing.CurvePointValue = curvePoint.CurvePointValue;
-            existing.CreationDate = curvePoint.CreationDate;
-            existing.AsOfDate = curvePoint.AsOfDate;
-
-            _context.CurvePoints.Update(existing);
+            _context.Entry(existing).CurrentValues.SetValues(curvePoint);
             await _context.SaveChangesAsync();
             return existing;
         }

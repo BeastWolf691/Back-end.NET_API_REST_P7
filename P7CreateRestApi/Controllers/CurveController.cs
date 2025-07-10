@@ -18,19 +18,6 @@ namespace P7CreateRestApi.Controllers
             _logger = logger;
         }
 
-        private void ValidateCurvePoint(CurvePointDto curvePointDto)
-        {
-            if (curvePointDto.Term < 0)
-            {
-                ModelState.AddModelError(nameof(curvePointDto.Term), "Le délai ne peut pas être négatif.");
-            }
-
-            if (curvePointDto.CurvePointValue < 0)
-            {
-                ModelState.AddModelError(nameof(curvePointDto.CurvePointValue), "La valeur ne peut pas être négative.");
-            }
-        }
-
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> GetAllCurves()
@@ -71,14 +58,15 @@ namespace P7CreateRestApi.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddCurvePoint([FromBody]CurvePointDto curvePointDto)
         {
-            ValidateCurvePoint(curvePointDto);
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
             try
             {
                 var createdCurve = await _curvePointService.AddCurve(curvePointDto);
                 return CreatedAtAction(nameof(GetCurveById), new { id = createdCurve.Id }, createdCurve);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation error while adding curve");
+                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
@@ -91,10 +79,6 @@ namespace P7CreateRestApi.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateCurvePoint(int id, [FromBody] CurvePointDto curvePointDto)
         {
-            ValidateCurvePoint(curvePointDto);
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
             try
             {
                 var updatedCurve = await _curvePointService.UpdateCurve(id, curvePointDto);
@@ -103,6 +87,11 @@ namespace P7CreateRestApi.Controllers
                     return NotFound(new { message = "Curve not found for update." });
                 }
                 return Ok(updatedCurve);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation error while updating curve");
+                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {

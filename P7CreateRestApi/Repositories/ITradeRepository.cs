@@ -8,7 +8,7 @@ namespace P7CreateRestApi.Repositories
         Task<IEnumerable<Trade>> GetTrades();
         Task<Trade?> GetTradeById(int id);
         Task<Trade> AddTrade(Trade trade);
-        Task<Trade?> UpdateTrade(Trade trade);
+        Task<Trade?> UpdateTrade(int id, Trade trade);
         Task<bool> DeleteTrade(int id);
     }
 }

@@ -9,21 +9,10 @@ using P7CreateRestApi.MapperProfiles;
 using P7CreateRestApi.MappingProfiles;
 using P7CreateRestApi.Repositories;
 using P7CreateRestApi.Services;
-using Serilog;
-using Serilog.Events;
+
 
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Configure Serilog
-Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Debug()
-    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-    .Enrich.FromLogContext()
-    .WriteTo.File("Logs/P7CreateRestApi-.log", rollingInterval: RollingInterval.Month)
-    .CreateLogger();
-
-builder.Host.UseSerilog();
 
 // Load User Secrets (for local development)
 builder.Configuration.AddUserSecrets<Program>();
@@ -128,6 +117,10 @@ if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
 }
+
+app.UseRouting();
+
+app.UseCors(policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 
 app.UseHttpsRedirection();
 

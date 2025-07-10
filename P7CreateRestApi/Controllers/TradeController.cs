@@ -19,26 +19,6 @@ namespace P7CreateRestApi.Controllers
             _logger = logger;
         }
 
-        private void ValidateTrade(TradeDto tradeDto)
-        {
-            if (tradeDto.BuyQuantity < 0)
-            {
-                ModelState.AddModelError(nameof(tradeDto.BuyQuantity), "La quantité achetée ne peut pas être négative.");
-            }
-            if (tradeDto.SellQuantity < 0)
-            {
-                ModelState.AddModelError(nameof(tradeDto.SellQuantity), "La quantité vendue ne peut pas être négative.");
-            }
-            if (tradeDto.BuyPrice < 0)
-            {
-                ModelState.AddModelError(nameof(tradeDto.BuyPrice), "Le prix d'achat ne peut pas être négatif.");
-            }
-            if (tradeDto.SellPrice < 0)
-            {
-                ModelState.AddModelError(nameof(tradeDto.SellPrice), "Le prix de vente ne peut pas être négatif.");
-            }
-        }
-
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> GetAllTrades()
@@ -79,14 +59,15 @@ namespace P7CreateRestApi.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddTrade([FromBody] TradeDto tradeDto)
         {
-            ValidateTrade(tradeDto);
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
             try
             {
                 var createdTrade = await _tradeService.AddTrade(tradeDto);
                 return CreatedAtAction(nameof(GetTradeById), new { id = createdTrade.TradeId }, createdTrade);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation error while adding trade");
+                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
@@ -99,19 +80,21 @@ namespace P7CreateRestApi.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateTrade(int id, [FromBody] TradeDto tradeDto)
         {
-            ValidateTrade(tradeDto);
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
             try
             {
-                var updateTrade = await _tradeService.UpdateTrade(tradeDto);
+                var updateTrade = await _tradeService.UpdateTrade(id, tradeDto);
                 if (updateTrade == null)
                 {
                     return NotFound(new { message = "Trade not found for update." });
                 }
                 return Ok(updateTrade);
             }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation error while updating trade");
+                return BadRequest(new { message = ex.Message });
+            }
+
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while updating trade");

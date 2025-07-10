@@ -17,6 +17,16 @@ namespace P7CreateRestApi.Services
             _mapper = mapper;
         }
 
+        private void ValidateCurvePoint(CurvePointDto curvePointDto)
+        {
+            if (curvePointDto.Term.HasValue && curvePointDto.Term < 0)
+                throw new ArgumentException("Le délai ne peut pas être négatif.");
+
+            if (curvePointDto.CurvePointValue.HasValue && curvePointDto.CurvePointValue < 0)
+                throw new ArgumentException("La valeur ne peut pas être négative.");
+        }
+
+
         public async Task<IEnumerable<CurvePointDto>> GetCurves()
         {
             var domains = await _curvePointRepository.GetCurves();
@@ -32,16 +42,33 @@ namespace P7CreateRestApi.Services
 
         public async Task<CurvePointDto> AddCurve(CurvePointDto dto)
         {
+            ValidateCurvePoint(dto);
             var domain = _mapper.Map<CurvePoint>(dto);
+
             var added = await _curvePointRepository.AddCurve(domain);
             return _mapper.Map<CurvePointDto>(added);
         }
 
         public async Task<CurvePointDto?> UpdateCurve(int id, CurvePointDto dto)
         {
-            var domain = _mapper.Map<CurvePoint>(dto);
-            var updated = await _curvePointRepository.UpdateCurve(id, domain);
-            return updated == null ? null : _mapper.Map<CurvePointDto>(updated);
+            var existing = await _curvePointRepository.GetCurve(id);
+            if (existing == null) return null;
+
+            if (dto.CurveId != 0)
+                existing.CurveId = dto.CurveId;
+
+            if (dto.Term.HasValue)
+                existing.Term = dto.Term;
+
+            if (dto.CurvePointValue.HasValue)
+                existing.CurvePointValue = dto.CurvePointValue;
+
+            var dtoToValidate = _mapper.Map<CurvePointDto>(existing);
+            ValidateCurvePoint(dtoToValidate);
+
+            // Sauvegarde
+            await _curvePointRepository.UpdateCurve(id, existing);
+            return _mapper.Map<CurvePointDto>(existing);
         }
 
         public async Task<bool> DeleteCurve(int id)

@@ -6,7 +6,7 @@ namespace P7CreateRestApi.Services
     {
         Task<IEnumerable<RuleDto>> GetRules();
         Task<RuleDto?> GetRule(int id);
-        Task<RuleDto> AddRule(RuleDto rule);
+        Task<RuleDto> AddRule(RuleDto ruleDto);
         Task<RuleDto?> UpdateRule(int id, RuleDto ruleDto);
         Task<bool> DeleteRule(int id);
     }

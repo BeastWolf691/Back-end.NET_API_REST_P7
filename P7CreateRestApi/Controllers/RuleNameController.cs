@@ -18,35 +18,6 @@ namespace P7CreateRestApi.Controllers
             _logger = logger;
         }
 
-        private void ValidateRuleDto(RuleDto ruleDto)
-        {
-            if (string.IsNullOrWhiteSpace(ruleDto.Name) || ruleDto.Name.Length > 100)
-            {
-                ModelState.AddModelError(nameof(ruleDto.Name), "Le nom est obligatoire et ne peut pas excéder 100 caractères.");
-            }
-            if (string.IsNullOrWhiteSpace(ruleDto.Description) || ruleDto.Description.Length > 500)
-            {
-                ModelState.AddModelError(nameof(ruleDto.Description), "La description est obligatoire et ne peut pas excéder 500 caractères.");
-            }
-            if (string.IsNullOrWhiteSpace(ruleDto.Json))
-            {
-                ModelState.AddModelError(nameof(ruleDto.Json), "Le champ Json est obligatoire.");
-            }
-            if (string.IsNullOrWhiteSpace(ruleDto.Template))
-            {
-                ModelState.AddModelError(nameof(ruleDto.Template), "Le champ Template est obligatoire.");
-            }
-            if (string.IsNullOrWhiteSpace(ruleDto.SqlStr))
-            {
-                ModelState.AddModelError(nameof(ruleDto.SqlStr), "Le champ SqlStr est obligatoire.");
-            }
-            if (string.IsNullOrWhiteSpace(ruleDto.SqlPart))
-            {
-                ModelState.AddModelError(nameof(ruleDto.SqlPart), "Le champ SqlPart est obligatoire.");
-            }
-        }
-
-
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> GetAllRules()
@@ -87,14 +58,16 @@ namespace P7CreateRestApi.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddRule([FromBody] RuleDto ruleDto)
         {
-            ValidateRuleDto(ruleDto);
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
 
             try
             {
                 var createdRule = await _ruleService.AddRule(ruleDto);
                 return CreatedAtAction(nameof(GetRuleById), new { id = createdRule.Id }, createdRule);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation error while adding rule");
+                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
@@ -107,10 +80,6 @@ namespace P7CreateRestApi.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateRule(int id, [FromBody] RuleDto ruleDto)
         {
-            ValidateRuleDto(ruleDto);
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
             try
             {
                 var updatedRule = await _ruleService.UpdateRule(id, ruleDto);
@@ -118,6 +87,11 @@ namespace P7CreateRestApi.Controllers
                     return NotFound(new { message = "Rule not found for update." });
 
                 return Ok(updatedRule);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation error while updating rule");
+                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {

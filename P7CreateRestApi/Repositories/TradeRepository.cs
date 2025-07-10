@@ -32,9 +32,9 @@ namespace P7CreateRestApi.Repositories
             return trade;
         }
 
-        public async Task<Trade?> UpdateTrade(Trade trade)
+        public async Task<Trade?> UpdateTrade(int id, Trade trade)
         {
-            var existing = await _context.Trades.FindAsync(trade.TradeId);
+            var existing = await _context.Trades.FindAsync(id);
             if (existing == null) return null;
 
             _context.Entry(existing).CurrentValues.SetValues(trade);

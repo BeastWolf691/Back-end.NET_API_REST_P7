@@ -7,7 +7,7 @@ namespace P7CreateRestApi.Services
         Task<IEnumerable<TradeDto>> GetTrades();
         Task<TradeDto?> GetTradeById(int id);
         Task<TradeDto> AddTrade(TradeDto tradeDto);
-        Task<TradeDto?> UpdateTrade(TradeDto tradeDto);
+        Task<TradeDto?> UpdateTrade(int id, TradeDto tradeDto);
         Task<bool> DeleteTrade(int id);
     }
 }

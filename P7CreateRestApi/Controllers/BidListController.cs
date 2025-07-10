@@ -59,20 +59,15 @@ namespace P7CreateRestApi.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddBid([FromBody] BidListDto bidDto)
         {
-            if (string.IsNullOrWhiteSpace(bidDto.Account))
-                ModelState.AddModelError(nameof(bidDto.Account), "Le compte est obligatoire.");
-            if (string.IsNullOrWhiteSpace(bidDto.BidType))
-                ModelState.AddModelError(nameof(bidDto.BidType), "Le type de l'offre est obligatoire.");
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             try
             {
                 var createdBid = await _bidService.AddBidList(bidDto);
                 return CreatedAtAction(nameof(GetBidById), new { id = createdBid.BidListId }, createdBid);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation error while updating bid");
+                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
@@ -85,14 +80,6 @@ namespace P7CreateRestApi.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateBid(int id, [FromBody] BidListDto bidDto)
         {
-            if (bidDto.Account != null && string.IsNullOrWhiteSpace(bidDto.Account))
-                ModelState.AddModelError(nameof(bidDto.Account), "Le compte ne peut pas être vide.");
-            if (bidDto.BidType != null && string.IsNullOrWhiteSpace(bidDto.BidType))
-                ModelState.AddModelError(nameof(bidDto.BidType), "Le type de l'offre ne peut pas être vide.");
-
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
             try
             {
                 var updatedBid = await _bidService.UpdateBidList(id, bidDto);
@@ -101,6 +88,11 @@ namespace P7CreateRestApi.Controllers
                     return NotFound(new { message = "Bid not found for update." });
                 }
                 return Ok(updatedBid);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation error while updating bid");
+                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {

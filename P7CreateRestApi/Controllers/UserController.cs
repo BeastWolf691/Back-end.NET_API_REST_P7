@@ -64,7 +64,7 @@ namespace P7CreateRestApi.Controllers
 
             // Récupérer l'utilisateur créé (il faut l'ID)
             var createdUser = await _userService.GetUserById(userDto.UserName);
-            var createdUserDto = createdUser; // déjà UserReadDto
+            var createdUserDto = createdUser; 
 
             return CreatedAtAction(nameof(GetUserById), new { id = createdUserDto!.Id }, createdUserDto);
         }

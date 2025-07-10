@@ -80,16 +80,14 @@ namespace P7CreateRestApi.Controllers
                 return BadRequest(new { message = "User ID mismatch." });
             }
 
-            try
+            var result = await _userService.UpdateUser(userDto);
+            if (!result.Succeeded)
             {
-                var updated = await _userService.UpdateUser(userDto);
-                return NoContent();
+                _logger.LogWarning("User update failed: {Errors}", result.Errors);
+                return BadRequest(result.Errors);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while updating user id={Id}", id);
-                return StatusCode(500, new { message = "Error while updating user." });
-            }
+
+            return NoContent();
         }
 
 
@@ -99,16 +97,15 @@ namespace P7CreateRestApi.Controllers
         {
             _logger.LogInformation("DeleteUser called for id={Id}", id);
 
-            try
+            var result = await _userService.DeleteUser(id);
+            if (!result.Succeeded)
             {
-                var deleted = await _userService.DeleteUser(id);
-                return NoContent();
+                _logger.LogWarning("User deletion failed: {Errors}", result.Errors);
+                return BadRequest(result.Errors);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while deleting user id={Id}", id);
-                return StatusCode(500, new { message = "Error while deleting user." });
-            }
+
+            return NoContent();
+
         }
     }
 }

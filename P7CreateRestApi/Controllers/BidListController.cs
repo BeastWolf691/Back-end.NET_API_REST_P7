@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using AutoMapper;
 using P7CreateRestApi.Models.Dto;
 using P7CreateRestApi.Services;
+using Dot.Net.WebApi.Domain;
 
 namespace P7CreateRestApi.Controllers
 {
@@ -11,11 +13,13 @@ namespace P7CreateRestApi.Controllers
     {
 
         private readonly IBidService _bidService;
+        private readonly IMapper _mapper;
         private readonly ILogger<BidListController> _logger;
 
-        public BidListController(IBidService bidService, ILogger<BidListController> logger)
+        public BidListController(IBidService bidService, IMapper mapper, ILogger<BidListController> logger)
         {
             _bidService = bidService;
+            _mapper = mapper;
             _logger = logger;
         }
 
@@ -26,7 +30,8 @@ namespace P7CreateRestApi.Controllers
             try
             {
                 var bids = await _bidService.GetBidLists();
-                return Ok(bids);
+                var bidsDto = _mapper.Map<IEnumerable<BidListDto>>(bids);
+                return Ok(bidsDto);
             }
             catch (Exception ex)
             {
@@ -34,6 +39,7 @@ namespace P7CreateRestApi.Controllers
                 return StatusCode(500, new { message = "Error while fetching bids." });
             }
         }
+
 
         [HttpGet("{id}")]
         [Authorize]
@@ -43,10 +49,10 @@ namespace P7CreateRestApi.Controllers
             {
                 var bid = await _bidService.GetBidList(id);
                 if (bid == null)
-                {
                     return NotFound(new { message = "Bid not found." });
-                }
-                return Ok(bid);
+
+                var bidDto = _mapper.Map<BidListDto>(bid);
+                return Ok(bidDto);
             }
             catch (Exception ex)
             {
@@ -61,12 +67,15 @@ namespace P7CreateRestApi.Controllers
         {
             try
             {
-                var createdBid = await _bidService.AddBidList(bidDto);
-                return CreatedAtAction(nameof(GetBidById), new { id = createdBid.BidListId }, createdBid);
+                var bidEntity = _mapper.Map<BidList>(bidDto);
+                var createdBid = await _bidService.AddBidList(bidEntity);
+                var createdBidDto = _mapper.Map<BidListDto>(createdBid);
+
+                return CreatedAtAction(nameof(GetBidById), new { id = createdBidDto.BidListId }, createdBidDto);
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Validation error while updating bid");
+                _logger.LogWarning(ex, "Validation error while adding bid");
                 return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
@@ -82,12 +91,14 @@ namespace P7CreateRestApi.Controllers
         {
             try
             {
-                var updatedBid = await _bidService.UpdateBidList(id, bidDto);
+                var bidEntity = _mapper.Map<BidList>(bidDto);
+                var updatedBid = await _bidService.UpdateBidList(id, bidEntity);
+
                 if (updatedBid == null)
-                {
                     return NotFound(new { message = "Bid not found for update." });
-                }
-                return Ok(updatedBid);
+
+                var updatedBidDto = _mapper.Map<BidListDto>(updatedBid);
+                return Ok(updatedBidDto);
             }
             catch (ArgumentException ex)
             {
@@ -109,9 +120,8 @@ namespace P7CreateRestApi.Controllers
             {
                 var deleted = await _bidService.DeleteBidList(id);
                 if (!deleted)
-                {
                     return NotFound(new { message = "Bid not found for deletion." });
-                }
+
                 return NoContent();
             }
             catch (Exception ex)

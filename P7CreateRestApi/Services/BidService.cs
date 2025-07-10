@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using Dot.Net.WebApi.Domain;
+﻿using Dot.Net.WebApi.Domain;
 using P7CreateRestApi.Models.Dto;
 using P7CreateRestApi.Repositories;
 
@@ -9,66 +8,53 @@ namespace P7CreateRestApi.Services
     {
 
         private readonly IBidRepository _bidRepository;
-        private readonly IMapper _mapper;
 
-        public BidService(IBidRepository bidRepository, IMapper mapper)
+        public BidService(IBidRepository bidRepository)
         {
             _bidRepository = bidRepository;
-            _mapper = mapper;
         }
 
-        private void ValidateBidList(BidListDto bidListDto)
+        private void ValidateBidList(BidList bid)
         {
-            if (string.IsNullOrWhiteSpace(bidListDto.Account))
+            if (string.IsNullOrWhiteSpace(bid.Account))
                 throw new ArgumentException("Le compte est obligatoire.");
 
-            if (string.IsNullOrWhiteSpace(bidListDto.BidType))
+            if (string.IsNullOrWhiteSpace(bid.BidType))
                 throw new ArgumentException("Le type de l'offre est obligatoire.");
 
-            if (bidListDto.BidQuantity.HasValue && bidListDto.BidQuantity < 0)
+            if (bid.BidQuantity < 0)
                 throw new ArgumentException("La quantité ne peut pas être négative.");
         }
 
-        public async Task<IEnumerable<BidListDto>> GetBidLists()
+        public async Task<IEnumerable<BidList>> GetBidLists()
         {
-            var bids = await _bidRepository.GetBidLists();
-            return _mapper.Map<IEnumerable<BidListDto>>(bids);
+            return await _bidRepository.GetBidLists();
         }
 
-        public async Task<BidListDto?> GetBidList(int id)
+        public async Task<BidList?> GetBidList(int id)
         {
-            var bid = await _bidRepository.GetBidList(id);
-            return bid == null ? null : _mapper.Map<BidListDto>(bid);
+            return await _bidRepository.GetBidList(id);
         }
 
-        public async Task<BidListDto> AddBidList(BidListDto bidListDto)
+        public async Task<BidList> AddBidList(BidList bidList)
         {
-            ValidateBidList(bidListDto);
-            var bidEntity = _mapper.Map<BidList>(bidListDto);
-
-            var addedBid = await _bidRepository.AddBidList(bidEntity);
-            return _mapper.Map<BidListDto>(addedBid);
+            ValidateBidList(bidList);
+            return await _bidRepository.AddBidList(bidList);
         }
 
-        public async Task<BidListDto?> UpdateBidList(int id, BidListDto bidListDto)
+        public async Task<BidList?> UpdateBidList(int id, BidList bidList)
         {
             var existing = await _bidRepository.GetBidList(id);
             if (existing == null) return null;
 
-            if (!string.IsNullOrWhiteSpace(bidListDto.Account))
-                existing.Account = bidListDto.Account;
+            existing.Account = bidList.Account ?? existing.Account;
+            existing.BidType = bidList.BidType ?? existing.BidType;
+            if (bidList.BidQuantity >= 0) existing.BidQuantity = bidList.BidQuantity;
 
-            if (!string.IsNullOrWhiteSpace(bidListDto.BidType))
-                existing.BidType = bidListDto.BidType;
-
-            if (bidListDto.BidQuantity.HasValue)
-                existing.BidQuantity = bidListDto.BidQuantity.Value;
-
-            var dtoToValidate = _mapper.Map<BidListDto>(existing);
-            ValidateBidList(dtoToValidate);
+            ValidateBidList(existing);
 
             await _bidRepository.UpdateBidList(id, existing);
-            return _mapper.Map<BidListDto>(existing);
+            return existing;
         }
 
         public async Task<bool> DeleteBidList(int id)

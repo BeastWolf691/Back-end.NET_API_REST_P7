@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using P7CreateRestApi.Models.Dto;
 using P7CreateRestApi.Services;
+using AutoMapper;
+using Dot.Net.WebApi.Domain;
 
 namespace P7CreateRestApi.Controllers
 {
@@ -12,11 +14,13 @@ namespace P7CreateRestApi.Controllers
 
         private readonly ITradeService _tradeService;
         private readonly ILogger<TradeController> _logger;
+        private readonly IMapper _mapper;
 
-        public TradeController(ITradeService tradeService, ILogger<TradeController> logger)
+        public TradeController(ITradeService tradeService, ILogger<TradeController> logger, IMapper mapper)
         {
             _tradeService = tradeService;
             _logger = logger;
+            _mapper = mapper;
         }
 
         [HttpGet]
@@ -26,7 +30,8 @@ namespace P7CreateRestApi.Controllers
             try
             {
                 var trades = await _tradeService.GetTrades();
-                return Ok(trades);
+                var tradeDto = _mapper.Map<IEnumerable<TradeDto>>(trades);
+                return Ok(tradeDto);
             }
             catch (Exception ex)
             {
@@ -46,7 +51,8 @@ namespace P7CreateRestApi.Controllers
                 {
                     return NotFound(new { message = "Trade not found." });
                 }
-                return Ok(trade);
+                var tradeDto = _mapper.Map<TradeDto>(trade);
+                return Ok(tradeDto);
             }
             catch (Exception ex)
             {
@@ -61,8 +67,11 @@ namespace P7CreateRestApi.Controllers
         {
             try
             {
-                var createdTrade = await _tradeService.AddTrade(tradeDto);
-                return CreatedAtAction(nameof(GetTradeById), new { id = createdTrade.TradeId }, createdTrade);
+                var tradeEntity = _mapper.Map<Trade>(tradeDto);
+                var createdTrade = await _tradeService.AddTrade(tradeEntity);
+                var createdTradeDto = _mapper.Map<TradeDto>(createdTrade);
+
+                return CreatedAtAction(nameof(GetTradeById), new { id = createdTradeDto.TradeId }, createdTradeDto);
             }
             catch (ArgumentException ex)
             {
@@ -82,12 +91,13 @@ namespace P7CreateRestApi.Controllers
         {
             try
             {
-                var updateTrade = await _tradeService.UpdateTrade(id, tradeDto);
+                var tradeEntity = _mapper.Map<Trade>(tradeDto);
+                var updateTrade = await _tradeService.UpdateTrade(id, tradeEntity);
                 if (updateTrade == null)
-                {
                     return NotFound(new { message = "Trade not found for update." });
-                }
-                return Ok(updateTrade);
+
+                var updatedTradeDto = _mapper.Map<TradeDto>(updateTrade);
+                return Ok(updatedTradeDto);
             }
             catch (ArgumentException ex)
             {

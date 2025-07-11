@@ -1,6 +1,4 @@
-﻿using AutoMapper;
-using Dot.Net.WebApi.Domain;
-using P7CreateRestApi.Models.Dto;
+﻿using Dot.Net.WebApi.Domain;
 using P7CreateRestApi.Repositories;
 
 namespace P7CreateRestApi.Services
@@ -9,66 +7,55 @@ namespace P7CreateRestApi.Services
     {
 
         private readonly ICurvePointRepository _curvePointRepository;
-        private readonly IMapper _mapper;
 
-        public CurvePointService(ICurvePointRepository curvePointRepository, IMapper mapper)
+        public CurvePointService(ICurvePointRepository curvePointRepository)
         {
             _curvePointRepository = curvePointRepository;
-            _mapper = mapper;
         }
 
-        private void ValidateCurvePoint(CurvePointDto curvePointDto)
+        private void ValidateCurvePoint(CurvePoint curvePoint)
         {
-            if (curvePointDto.Term.HasValue && curvePointDto.Term < 0)
+            if (!curvePoint.CurveId.HasValue || curvePoint.CurveId == 0)
+                throw new ArgumentException("L'identifiant de la courbe est obligatoire.");
+
+            if (curvePoint.Term.HasValue && curvePoint.Term < 0)
                 throw new ArgumentException("Le délai ne peut pas être négatif.");
 
-            if (curvePointDto.CurvePointValue.HasValue && curvePointDto.CurvePointValue < 0)
+            if (curvePoint.CurvePointValue.HasValue && curvePoint.CurvePointValue < 0)
                 throw new ArgumentException("La valeur ne peut pas être négative.");
         }
 
 
-        public async Task<IEnumerable<CurvePointDto>> GetCurves()
+        public async Task<IEnumerable<CurvePoint>> GetCurves()
         {
-            var domains = await _curvePointRepository.GetCurves();
-            return _mapper.Map<IEnumerable<CurvePointDto>>(domains);
+            return await _curvePointRepository.GetCurves();
         }
 
-        public async Task<CurvePointDto?> GetCurve(int id)
+        public async Task<CurvePoint?> GetCurve(int id)
         {
-            var domain = await _curvePointRepository.GetCurve(id);
-            return domain == null ? null : _mapper.Map<CurvePointDto>(domain);
+            return await _curvePointRepository.GetCurve(id);
         }
 
 
-        public async Task<CurvePointDto> AddCurve(CurvePointDto dto)
+        public async Task<CurvePoint> AddCurve(CurvePoint curvePoint)
         {
-            ValidateCurvePoint(dto);
-            var domain = _mapper.Map<CurvePoint>(dto);
-
-            var added = await _curvePointRepository.AddCurve(domain);
-            return _mapper.Map<CurvePointDto>(added);
+            ValidateCurvePoint(curvePoint);
+            return await _curvePointRepository.AddCurve(curvePoint);
         }
 
-        public async Task<CurvePointDto?> UpdateCurve(int id, CurvePointDto dto)
+        public async Task<CurvePoint?> UpdateCurve(int id, CurvePoint curvePoint)
         {
             var existing = await _curvePointRepository.GetCurve(id);
             if (existing == null) return null;
 
-            if (dto.CurveId != 0)
-                existing.CurveId = dto.CurveId;
+            existing.Term = (curvePoint.Term.HasValue && curvePoint.Term >= 0) ? curvePoint.Term : existing.Term;
+            existing.CurvePointValue = (curvePoint.CurvePointValue.HasValue && curvePoint.CurvePointValue >= 0) ? curvePoint.CurvePointValue : existing.CurvePointValue;
+            existing.CurveId = (curvePoint.CurveId.HasValue && curvePoint.CurveId != 0) ? curvePoint.CurveId : existing.CurveId;
 
-            if (dto.Term.HasValue)
-                existing.Term = dto.Term;
+            ValidateCurvePoint(existing);
 
-            if (dto.CurvePointValue.HasValue)
-                existing.CurvePointValue = dto.CurvePointValue;
-
-            var dtoToValidate = _mapper.Map<CurvePointDto>(existing);
-            ValidateCurvePoint(dtoToValidate);
-
-            // Sauvegarde
             await _curvePointRepository.UpdateCurve(id, existing);
-            return _mapper.Map<CurvePointDto>(existing);
+            return existing;
         }
 
         public async Task<bool> DeleteCurve(int id)

@@ -1,6 +1,4 @@
-﻿using AutoMapper;
-using Dot.Net.WebApi.Domain;
-using P7CreateRestApi.Models.Dto;
+﻿using Dot.Net.WebApi.Domain;
 using P7CreateRestApi.Repositories;
 
 namespace P7CreateRestApi.Services
@@ -8,73 +6,57 @@ namespace P7CreateRestApi.Services
     public class RatingService : IRatingService
     {
         private readonly IRatingRepository _ratingRepository;
-        private readonly IMapper _mapper;
 
-        public RatingService(IRatingRepository ratingRepository, IMapper mapper)
+        public RatingService(IRatingRepository ratingRepository)
         {
             _ratingRepository = ratingRepository;
-            _mapper = mapper;
         }
 
-        private void ValidateRatingDto(RatingDto ratingDto)
+        private void ValidateRating(Rating rating)
         {
-            if (string.IsNullOrWhiteSpace(ratingDto.MoodysRating) || ratingDto.MoodysRating.Length > 50)
+            if (string.IsNullOrWhiteSpace(rating.MoodysRating) || rating.MoodysRating.Length > 50)
                 throw new ArgumentException("La note de solvabilité Moody's est obligatoire et ne doit pas excéder 50 caractères.");
             
-            if (string.IsNullOrWhiteSpace(ratingDto.SandPRating) || ratingDto.SandPRating.Length > 50)
+            if (string.IsNullOrWhiteSpace(rating.SandPRating) || rating.SandPRating.Length > 50)
                 throw new ArgumentException("La note de solvabilité S&P est obligatoire et ne doit pas excéder 50 caractères.");
             
-            if (string.IsNullOrWhiteSpace(ratingDto.FitchRating) || ratingDto.FitchRating.Length > 50)
+            if (string.IsNullOrWhiteSpace(rating.FitchRating) || rating.FitchRating.Length > 50)
                 throw new ArgumentException("La note de solvabilité Fitch est obligatoire et ne doit pas excéder 50 caractères.");
             
-            if (ratingDto.OrderNumber.HasValue && ratingDto.OrderNumber < 0)
+            if (rating.OrderNumber.HasValue && rating.OrderNumber < 0)
                 throw new ArgumentException("Le numéro de commande ne peut pas être négatif.");
         }
 
-        public async Task<IEnumerable<RatingDto>> GetRatings()
+        public async Task<IEnumerable<Rating>> GetRatings()
         {
-            var ratings = await _ratingRepository.GetRatings();
-            return _mapper.Map<IEnumerable<RatingDto>>(ratings);
+            return await _ratingRepository.GetRatings();
         }
 
-        public async Task<RatingDto?> GetRating(int id)
+        public async Task<Rating?> GetRating(int id)
         {
-            var rating = await _ratingRepository.GetRating(id);
-            if (rating == null) return null;
-            return _mapper.Map<RatingDto>(rating);
+            return await _ratingRepository.GetRating(id);
         }
 
-        public async Task<RatingDto> AddRating(RatingDto ratingDto)
+        public async Task<Rating> AddRating(Rating rating)
         {
-            ValidateRatingDto(ratingDto);
-            var rating = _mapper.Map<Rating>(ratingDto);
-
-            var added = await _ratingRepository.AddRating(rating);
-            return _mapper.Map<RatingDto>(added);
+            ValidateRating(rating);
+            return await _ratingRepository.AddRating(rating);
         }
 
-        public async Task<RatingDto?> UpdateRating(int id, RatingDto ratingDto)
+        public async Task<Rating?> UpdateRating(int id, Rating rating)
         {
-            var rating = await _ratingRepository.GetRating(id);
-            if (rating == null) return null;
+            var existing = await _ratingRepository.GetRating(id);
+            if (existing == null) return null;
 
-            if (!string.IsNullOrWhiteSpace(ratingDto.MoodysRating))
-                rating.MoodysRating = ratingDto.MoodysRating;
+            existing.MoodysRating = !string.IsNullOrWhiteSpace(rating.MoodysRating) ? rating.MoodysRating : existing.MoodysRating;
+            existing.SandPRating = !string.IsNullOrWhiteSpace(rating.SandPRating) ? rating.SandPRating : existing.SandPRating;
+            existing.FitchRating = !string.IsNullOrWhiteSpace(rating.FitchRating) ? rating.FitchRating : existing.FitchRating;
+            existing.OrderNumber = (rating.OrderNumber.HasValue &&  rating.OrderNumber !=0) ? rating.OrderNumber : existing.OrderNumber;
 
-            if (!string.IsNullOrWhiteSpace(ratingDto.SandPRating))
-                rating.SandPRating = ratingDto.SandPRating;
+            ValidateRating(existing);
 
-            if (!string.IsNullOrWhiteSpace(ratingDto.FitchRating))
-                rating.FitchRating = ratingDto.FitchRating;
-
-            if (ratingDto.OrderNumber.HasValue)
-                rating.OrderNumber = ratingDto.OrderNumber.Value;
-
-            var dtoToValidate = _mapper.Map<RatingDto>(rating);
-            ValidateRatingDto(dtoToValidate);
-
-            await _ratingRepository.UpdateRating(id, rating);
-            return _mapper.Map<RatingDto>(rating);
+            await _ratingRepository.UpdateRating(id, existing);
+            return existing;
         }
 
         public async Task<bool> DeleteRating(int id)

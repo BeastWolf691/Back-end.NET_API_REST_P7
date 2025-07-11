@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using P7CreateRestApi.Models.Dto;
 using P7CreateRestApi.Services;
+using AutoMapper;
+using Dot.Net.WebApi.Domain;
 
 namespace P7CreateRestApi.Controllers
 {
@@ -11,11 +13,13 @@ namespace P7CreateRestApi.Controllers
     {
         private readonly ICurvePointService _curvePointService;
         private readonly ILogger<CurveController> _logger;
+        private readonly IMapper _mapper;
 
-        public CurveController(ICurvePointService curvePointService, ILogger<CurveController> logger)
+        public CurveController(ICurvePointService curvePointService, ILogger<CurveController> logger, IMapper mapper)
         {
             _curvePointService = curvePointService;
             _logger = logger;
+            _mapper = mapper;
         }
 
         [HttpGet]
@@ -25,7 +29,8 @@ namespace P7CreateRestApi.Controllers
             try
             {
                 var curves = await _curvePointService.GetCurves();
-                return Ok(curves);
+                var curvePointDto = _mapper.Map<IEnumerable<CurvePointDto>>(curves);
+                return Ok(curvePointDto);
             }
             catch (Exception ex)
             {
@@ -42,10 +47,10 @@ namespace P7CreateRestApi.Controllers
             {
                 var curve = await _curvePointService.GetCurve(id);
                 if (curve == null)
-                {
                     return NotFound(new { message = "Curve not found." });
-                }
-                return Ok(curve);
+
+                var curvePointDto = _mapper.Map<CurvePointDto>(curve);
+                return Ok(curvePointDto);
             }
             catch (Exception ex)
             {
@@ -60,8 +65,11 @@ namespace P7CreateRestApi.Controllers
         {
             try
             {
-                var createdCurve = await _curvePointService.AddCurve(curvePointDto);
-                return CreatedAtAction(nameof(GetCurveById), new { id = createdCurve.Id }, createdCurve);
+                var curveEntity = _mapper.Map<CurvePoint>(curvePointDto);
+                var createdCurve = await _curvePointService.AddCurve(curveEntity);
+                var createdCurveDto = _mapper.Map<CurvePointDto>(createdCurve);
+
+                return CreatedAtAction(nameof(GetCurveById), new { id = createdCurveDto.Id }, createdCurveDto);
             }
             catch (ArgumentException ex)
             {
@@ -81,12 +89,13 @@ namespace P7CreateRestApi.Controllers
         {
             try
             {
-                var updatedCurve = await _curvePointService.UpdateCurve(id, curvePointDto);
+                var curveEntity = _mapper.Map<CurvePoint>(curvePointDto);
+                var updatedCurve = await _curvePointService.UpdateCurve(id, curveEntity);
                 if (updatedCurve == null)
-                {
                     return NotFound(new { message = "Curve not found for update." });
-                }
-                return Ok(updatedCurve);
+
+                var updatedCurveDto = _mapper.Map<CurvePointDto>(updatedCurve);
+                return Ok(updatedCurveDto);
             }
             catch (ArgumentException ex)
             {

@@ -1,13 +1,14 @@
-﻿using P7CreateRestApi.Models.Dto;
+﻿using Dot.Net.WebApi.Domain;
+using P7CreateRestApi.Models.Dto;
 
 namespace P7CreateRestApi.Services
 {
     public interface ICurvePointService
     {
-        Task<IEnumerable<CurvePointDto>> GetCurves();
-        Task<CurvePointDto?> GetCurve(int id);
-        Task<CurvePointDto> AddCurve(CurvePointDto curvePointDto);
-        Task<CurvePointDto?> UpdateCurve(int id, CurvePointDto curvePointDto);
+        Task<IEnumerable<CurvePoint>> GetCurves();
+        Task<CurvePoint?> GetCurve(int id);
+        Task<CurvePoint> AddCurve(CurvePoint curvePoint);
+        Task<CurvePoint?> UpdateCurve(int id, CurvePoint curvePoint);
         Task<bool> DeleteCurve(int id);
     }
 }

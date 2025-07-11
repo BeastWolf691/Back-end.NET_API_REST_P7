@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using P7CreateRestApi.Models.Dto;
 using P7CreateRestApi.Services;
+using AutoMapper;
+using Dot.Net.WebApi.Domain;
 
 namespace P7CreateRestApi.Controllers
 {
@@ -11,11 +13,13 @@ namespace P7CreateRestApi.Controllers
     {
         private readonly RuleService _ruleService;
         private readonly ILogger<RuleNameController> _logger;
+        private readonly IMapper _mapper;
 
-        public RuleNameController(RuleService ruleService, ILogger<RuleNameController> logger)
+        public RuleNameController(RuleService ruleService, ILogger<RuleNameController> logger, IMapper mapper)
         {
             _ruleService = ruleService;
             _logger = logger;
+            _mapper = mapper;
         }
 
         [HttpGet]
@@ -25,7 +29,8 @@ namespace P7CreateRestApi.Controllers
             try
             {
                 var rules = await _ruleService.GetRules();
-                return Ok(rules);
+                var ruleDto = _mapper.Map<IEnumerable<RuleDto>>(rules);
+                return Ok(ruleDto);
             }
             catch (Exception ex)
             {
@@ -42,10 +47,10 @@ namespace P7CreateRestApi.Controllers
             {
                 var rule = await _ruleService.GetRule(id);
                 if (rule == null)
-                {
                     return NotFound(new { message = "Rule not found." });
-                }
-                return Ok(rule);
+
+                var ruleDto = _mapper.Map<RuleDto>(rule);
+                return Ok(ruleDto);
             }
             catch (Exception ex)
             {
@@ -61,8 +66,11 @@ namespace P7CreateRestApi.Controllers
 
             try
             {
-                var createdRule = await _ruleService.AddRule(ruleDto);
-                return CreatedAtAction(nameof(GetRuleById), new { id = createdRule.Id }, createdRule);
+                var ruleEntity = _mapper.Map<RuleName>(ruleDto);
+                var createdRule = await _ruleService.AddRule(ruleEntity);
+                var createdRuleDto = _mapper.Map<RuleDto>(createdRule);
+
+                return CreatedAtAction(nameof(GetRuleById), new { id = createdRuleDto.Id }, createdRuleDto);
             }
             catch (ArgumentException ex)
             {
@@ -82,11 +90,13 @@ namespace P7CreateRestApi.Controllers
         {
             try
             {
-                var updatedRule = await _ruleService.UpdateRule(id, ruleDto);
+                var ruleEntity = _mapper.Map<RuleName>(ruleDto);
+                var updatedRule = await _ruleService.UpdateRule(id, ruleEntity);
                 if (updatedRule == null)
                     return NotFound(new { message = "Rule not found for update." });
 
-                return Ok(updatedRule);
+                var updatedRuleDto = _mapper.Map<RuleDto>(updatedRule);
+                return Ok(updatedRuleDto);
             }
             catch (ArgumentException ex)
             {

@@ -1,5 +1,4 @@
 ﻿using Dot.Net.WebApi.Domain;
-using P7CreateRestApi.Models.Dto;
 using P7CreateRestApi.Repositories;
 
 namespace P7CreateRestApi.Services

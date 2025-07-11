@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using P7CreateRestApi.Models.Dto;
 using P7CreateRestApi.Services;
+using AutoMapper;
+using Dot.Net.WebApi.Domain;
 
 namespace P7CreateRestApi.Controllers
 {
@@ -11,11 +13,13 @@ namespace P7CreateRestApi.Controllers
     {
         private readonly RatingService _ratingService;
         private readonly ILogger<RatingController> _logger;
+        private readonly IMapper _mapper;
 
-        public RatingController(RatingService ratingService, ILogger<RatingController> logger)
+        public RatingController(RatingService ratingService, ILogger<RatingController> logger, IMapper mapper)
         {
             _ratingService = ratingService;
             _logger = logger;
+            _mapper = mapper;
         }
 
         [HttpGet]
@@ -25,7 +29,8 @@ namespace P7CreateRestApi.Controllers
             try
             {
                 var ratings = await _ratingService.GetRatings();
-                return Ok(ratings);
+                var ratingDto = _mapper.Map<IEnumerable<RatingDto>>(ratings);
+                return Ok(ratingDto);
             }
             catch (Exception ex)
             {
@@ -45,7 +50,8 @@ namespace P7CreateRestApi.Controllers
                 {
                     return NotFound(new { message = "Rating not found" });
                 }
-                return Ok(rating);
+                var ratingDto = _mapper.Map<RatingDto>(rating);
+                return Ok(ratingDto);
             }
             catch (Exception ex)
             {
@@ -60,8 +66,11 @@ namespace P7CreateRestApi.Controllers
         {
             try
             {
-                var createdRating = await _ratingService.AddRating(ratingDto);
-                return CreatedAtAction(nameof(GetRatingById), new { id = createdRating.Id }, createdRating);
+                var ratingEntity = _mapper.Map<Rating>(ratingDto);
+                var createdRating = await _ratingService.AddRating(ratingEntity);
+                var createRatingDto = _mapper.Map<RatingDto>(createdRating);
+                
+                return CreatedAtAction(nameof(GetRatingById), new { id = createRatingDto.Id }, createRatingDto);
             }
             catch (ArgumentException ex)
             {
@@ -81,12 +90,13 @@ namespace P7CreateRestApi.Controllers
         {
             try
             {
-                var updateRating = await _ratingService.UpdateRating(id, ratingDto);
-                if (updateRating == null)
-                {
+                var ratingEntity = _mapper.Map<Rating>(ratingDto);
+                var updatedRating = await _ratingService.UpdateRating(id, ratingEntity);
+                if (updatedRating == null)
                     return NotFound(new { message = "Rating not found for update." });
-                }
-                return Ok(updateRating);
+
+                var updatedRatingDto = _mapper.Map<RatingDto>(updatedRating);
+                return Ok(updatedRatingDto);
             }
             catch (ArgumentException ex)
             {
